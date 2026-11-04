@@ -1,0 +1,19 @@
+{
+  "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
+  "name": "triply",
+  "version": "0.1.0",
+  "description": "Plan and organize your vacations with Claude: a guided planning flow, a trip file as the single source of truth, checked stops and opening hours, and ready-to-use documents (itinerary with map, booking deadlines calendar, packing list).",
+  "author": {
+    "name": "triply contributors"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/fpetroli/triply",
+  "homepage": "https://github.com/fpetroli/triply",
+  "keywords": [
+    "travel",
+    "trip-planning",
+    "itinerary",
+    "vacation",
+    "maps"
+  ]
+}

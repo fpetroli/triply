@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "triply",
+  "description": "triply: plan and organize your vacations with Claude.",
+  "owner": {
+    "name": "triply contributors"
+  },
+  "plugins": [
+    {
+      "name": "triply",
+      "source": "./",
+      "description": "A guided planning flow, a trip file as the single source of truth, checked stops and opening hours, and ready-to-use trip documents.",
+      "category": "productivity",
+      "tags": ["travel", "trip-planning", "itinerary", "vacation"]
+    }
+  ]
+}
