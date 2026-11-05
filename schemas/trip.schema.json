@@ -1,0 +1,427 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/fpetroli/triply/schemas/trip.schema.json",
+  "title": "triply trip file",
+  "description": "The trip file (.triply/trip.json): the single source of truth of a trip. Every document for the user is generated from it.",
+  "type": "object",
+  "required": ["schema_version", "trip", "progress", "travellers", "constraints", "places", "days"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "description": "Version of this schema the file follows.",
+      "const": 1
+    },
+    "trip": {
+      "type": "object",
+      "required": ["id", "title", "status", "language", "map_provider", "currency", "created", "updated"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "title": {"type": "string", "minLength": 1, "description": "Title in the user's language; also the name of the trip folder."},
+        "status": {"enum": ["idea", "planning", "booked", "completed", "cancelled"]},
+        "language": {"$ref": "#/$defs/language"},
+        "map_provider": {"$ref": "#/$defs/map_provider"},
+        "currency": {"$ref": "#/$defs/currency"},
+        "created": {"$ref": "#/$defs/date"},
+        "updated": {"$ref": "#/$defs/date"}
+      }
+    },
+    "progress": {
+      "description": "Where the planning flow stands: everything a new session needs to resume.",
+      "type": "object",
+      "required": ["phase", "next_step", "open_points", "log"],
+      "additionalProperties": false,
+      "properties": {
+        "phase": {"$ref": "#/$defs/phase"},
+        "next_step": {"type": "string", "description": "What to do next, in plain words."},
+        "open_points": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "text", "created"],
+            "additionalProperties": false,
+            "properties": {
+              "id": {"$ref": "#/$defs/id"},
+              "text": {"type": "string", "minLength": 1},
+              "phase": {"$ref": "#/$defs/phase"},
+              "created": {"$ref": "#/$defs/date"}
+            }
+          }
+        },
+        "log": {
+          "description": "Choices made, with their reason, oldest first.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["date", "phase", "choice"],
+            "additionalProperties": false,
+            "properties": {
+              "date": {"$ref": "#/$defs/date"},
+              "phase": {"$ref": "#/$defs/phase"},
+              "choice": {"type": "string", "minLength": 1},
+              "reason": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
+    "travellers": {
+      "description": "Copy of the travellers' data taken from the user profile when the trip was planned.",
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/traveller"}
+    },
+    "constraints": {
+      "type": "object",
+      "required": ["dates"],
+      "additionalProperties": false,
+      "properties": {
+        "origin": {
+          "type": "object",
+          "required": ["name"],
+          "additionalProperties": false,
+          "properties": {
+            "name": {"type": "string", "minLength": 1},
+            "place": {"$ref": "#/$defs/id"}
+          }
+        },
+        "dates": {
+          "description": "Either fixed dates (start and end) or a flexible window with a length.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "start": {"$ref": "#/$defs/date"},
+            "end": {"$ref": "#/$defs/date"},
+            "window_start": {"$ref": "#/$defs/date"},
+            "window_end": {"$ref": "#/$defs/date"},
+            "length_days": {"type": "integer", "minimum": 1}
+          }
+        },
+        "trip_types": {"type": "array", "items": {"type": "string"}},
+        "avoid": {"type": "array", "items": {"type": "string"}},
+        "transport_preferences": {"type": "array", "items": {"$ref": "#/$defs/transport_mode"}},
+        "budget": {
+          "type": "object",
+          "required": ["amount", "currency", "scope"],
+          "additionalProperties": false,
+          "properties": {
+            "amount": {"type": "number", "minimum": 0},
+            "currency": {"$ref": "#/$defs/currency"},
+            "scope": {"enum": ["total", "per_person"]}
+          }
+        }
+      }
+    },
+    "options": {
+      "description": "Destinations and routes proposed to the user, and the ones chosen.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "kind", "title", "chosen"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {"$ref": "#/$defs/id"},
+          "kind": {"enum": ["destination", "route"]},
+          "title": {"type": "string", "minLength": 1},
+          "summary": {"type": "string"},
+          "pros": {"type": "array", "items": {"type": "string"}},
+          "cons": {"type": "array", "items": {"type": "string"}},
+          "chosen": {"type": "boolean"}
+        }
+      }
+    },
+    "places": {
+      "description": "Every place of the trip, once, keyed by its id.",
+      "type": "object",
+      "propertyNames": {"$ref": "#/$defs/id"},
+      "additionalProperties": {"$ref": "#/$defs/place"}
+    },
+    "stays": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "place", "check_in", "check_out", "booking"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {"$ref": "#/$defs/id"},
+          "place": {"$ref": "#/$defs/id", "description": "The town or area where the user sleeps, or the accommodation itself once booked."},
+          "check_in": {"$ref": "#/$defs/date"},
+          "check_out": {"$ref": "#/$defs/date"},
+          "name": {"type": "string", "description": "Name of the accommodation, once booked."},
+          "booking": {"$ref": "#/$defs/booking"}
+        }
+      }
+    },
+    "transports": {
+      "description": "Moves between bases (flights, trains, ferries, car hire…), not the short moves inside a day.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "mode", "from", "to", "date", "booking"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {"$ref": "#/$defs/id"},
+          "mode": {"$ref": "#/$defs/transport_mode"},
+          "from": {"$ref": "#/$defs/id"},
+          "to": {"$ref": "#/$defs/id"},
+          "date": {"$ref": "#/$defs/date"},
+          "depart_time": {"$ref": "#/$defs/time"},
+          "arrive_time": {"$ref": "#/$defs/time"},
+          "duration_min": {"type": "integer", "minimum": 0},
+          "booking": {"$ref": "#/$defs/booking"}
+        }
+      }
+    },
+    "days": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["date", "items"],
+        "additionalProperties": false,
+        "properties": {
+          "date": {"$ref": "#/$defs/date"},
+          "base": {"$ref": "#/$defs/id", "description": "Id of the stay where the night is spent."},
+          "theme": {"type": "string", "description": "One line for the overview of the days."},
+          "pace": {"$ref": "#/$defs/pace"},
+          "candidates": {
+            "description": "Things to visit proposed for this day, among which the user chooses.",
+            "type": "array",
+            "items": {"$ref": "#/$defs/id"}
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["place", "role"],
+              "additionalProperties": false,
+              "properties": {
+                "place": {"$ref": "#/$defs/id"},
+                "role": {"enum": ["main", "backup", "secondary", "meal", "rest"]},
+                "start": {"$ref": "#/$defs/time"},
+                "duration_min": {"type": "integer", "minimum": 0},
+                "notes": {"type": "string"},
+                "to_next": {
+                  "description": "The move from this stop to the next one of the day.",
+                  "type": "object",
+                  "required": ["mode", "minutes", "source"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "mode": {"enum": ["walk", "bike", "car", "public_transport", "taxi", "other"]},
+                    "minutes": {"type": "integer", "minimum": 0},
+                    "distance_km": {"type": "number", "minimum": 0},
+                    "source": {"$ref": "#/$defs/source"}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "deadlines": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "due", "kind", "done"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {"$ref": "#/$defs/id"},
+          "title": {"type": "string", "minLength": 1},
+          "due": {"$ref": "#/$defs/date"},
+          "kind": {"enum": ["booking", "document", "payment", "other"]},
+          "reason": {"type": "string"},
+          "related": {"$ref": "#/$defs/id", "description": "Id of the stay, transport, place or traveller it concerns."},
+          "search_url": {"$ref": "#/$defs/url"},
+          "done": {"type": "boolean"}
+        }
+      }
+    },
+    "entry_requirements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["country", "traveller", "requirement", "status", "source"],
+        "additionalProperties": false,
+        "properties": {
+          "country": {"$ref": "#/$defs/country"},
+          "traveller": {"$ref": "#/$defs/id"},
+          "requirement": {"type": "string", "minLength": 1},
+          "status": {"enum": ["ok", "action_needed", "unknown"]},
+          "notes": {"type": "string"},
+          "source": {"$ref": "#/$defs/source"}
+        }
+      }
+    },
+    "weather": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["place", "start", "end", "kind", "source"],
+        "additionalProperties": false,
+        "properties": {
+          "place": {"$ref": "#/$defs/id"},
+          "start": {"$ref": "#/$defs/date"},
+          "end": {"$ref": "#/$defs/date"},
+          "kind": {"enum": ["forecast", "climate"], "description": "forecast up to about 16 days ahead, climate (historical average) beyond."},
+          "summary": {"type": "string"},
+          "temp_min_c": {"type": "number"},
+          "temp_max_c": {"type": "number"},
+          "precipitation_mm": {"type": "number", "minimum": 0},
+          "source": {"$ref": "#/$defs/source"}
+        }
+      }
+    },
+    "packing": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["item", "category", "packed"],
+        "additionalProperties": false,
+        "properties": {
+          "item": {"type": "string", "minLength": 1},
+          "category": {"enum": ["documents", "clothing", "health", "electronics", "toiletries", "gear", "other"]},
+          "reason": {"type": "string"},
+          "quantity": {"type": "integer", "minimum": 1},
+          "packed": {"type": "boolean"}
+        }
+      }
+    },
+    "budget": {
+      "description": "Costs entered by the user; triply never looks up prices.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["label", "amount", "currency", "status"],
+        "additionalProperties": false,
+        "properties": {
+          "label": {"type": "string", "minLength": 1},
+          "amount": {"type": "number", "minimum": 0},
+          "currency": {"$ref": "#/$defs/currency"},
+          "status": {"enum": ["confirmed", "estimated", "unknown"]},
+          "related": {"$ref": "#/$defs/id"}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "description": "Lower-case letters, digits and hyphens."
+    },
+    "date": {"type": "string", "format": "date"},
+    "time": {"type": "string", "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"},
+    "url": {"type": "string", "pattern": "^https?://"},
+    "language": {"type": "string", "pattern": "^[a-z]{2}(-[A-Z]{2})?$"},
+    "currency": {"type": "string", "pattern": "^[A-Z]{3}$"},
+    "country": {"type": "string", "pattern": "^[A-Z]{2}$", "description": "ISO 3166-1 alpha-2 code."},
+    "map_provider": {"enum": ["osm", "mapbox", "google"]},
+    "pace": {"enum": ["relaxed", "moderate", "intense"]},
+    "phase": {
+      "description": "Phase of the planning flow.",
+      "enum": ["setup", "brief", "destination", "entry_requirements", "route", "days", "verification", "bookings", "weather_packing", "documents"]
+    },
+    "transport_mode": {"enum": ["flight", "train", "ferry", "bus", "car", "car_rental", "other"]},
+    "source": {
+      "description": "Where a fact taken from outside comes from, and when it was checked.",
+      "type": "object",
+      "required": ["provider", "checked_at"],
+      "additionalProperties": false,
+      "properties": {
+        "provider": {"type": "string", "minLength": 1, "description": "For example osm, mapbox, google, open-meteo, web, user."},
+        "url": {"$ref": "#/$defs/url"},
+        "title": {"type": "string"},
+        "checked_at": {"$ref": "#/$defs/date"}
+      }
+    },
+    "traveller": {
+      "type": "object",
+      "required": ["id", "label", "age_group"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "label": {"type": "string", "minLength": 1, "description": "A name or a label chosen by the user."},
+        "age_group": {"enum": ["infant", "child", "teen", "adult", "senior"]},
+        "citizenships": {"type": "array", "items": {"$ref": "#/$defs/country"}},
+        "documents": {
+          "description": "Travel documents. Only type, issuing country and expiry: never document numbers.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["type", "country"],
+            "additionalProperties": false,
+            "properties": {
+              "type": {"enum": ["passport", "id_card", "visa", "driving_licence", "other"]},
+              "country": {"$ref": "#/$defs/country"},
+              "expires": {"$ref": "#/$defs/date"}
+            }
+          }
+        },
+        "pace": {"$ref": "#/$defs/pace"},
+        "interests": {"type": "array", "items": {"type": "string"}},
+        "mobility_notes": {"type": "string"}
+      }
+    },
+    "place": {
+      "type": "object",
+      "required": ["name", "kind", "lat", "lon"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "kind": {"enum": ["city", "area", "attraction", "museum", "nature", "restaurant", "accommodation", "station", "airport", "port", "other"]},
+        "lat": {"type": "number", "minimum": -90, "maximum": 90},
+        "lon": {"type": "number", "minimum": -180, "maximum": 180},
+        "address": {"type": "string"},
+        "country": {"$ref": "#/$defs/country"},
+        "provider_ids": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "osm": {"type": "string"},
+            "mapbox": {"type": "string"},
+            "google": {"type": "string"}
+          }
+        },
+        "opening_hours": {
+          "type": "object",
+          "required": ["raw", "source"],
+          "additionalProperties": false,
+          "properties": {
+            "raw": {"type": "string", "description": "Opening hours as given by the source."},
+            "source": {"$ref": "#/$defs/source"}
+          }
+        },
+        "verification": {
+          "type": "object",
+          "required": ["status", "checked_at"],
+          "additionalProperties": false,
+          "properties": {
+            "status": {"enum": ["unverified", "ok", "warning", "failed"]},
+            "notes": {"type": "string"},
+            "checked_at": {"$ref": "#/$defs/date"}
+          }
+        }
+      }
+    },
+    "booking": {
+      "type": "object",
+      "required": ["status"],
+      "additionalProperties": false,
+      "properties": {
+        "status": {"enum": ["to_book", "booked", "not_needed"]},
+        "cost": {
+          "description": "Entered by the user.",
+          "type": "object",
+          "required": ["amount", "currency"],
+          "additionalProperties": false,
+          "properties": {
+            "amount": {"type": "number", "minimum": 0},
+            "currency": {"$ref": "#/$defs/currency"}
+          }
+        },
+        "reference": {"type": "string", "description": "Booking reference, as given by the user."},
+        "search_url": {"$ref": "#/$defs/url"}
+      }
+    }
+  }
+}

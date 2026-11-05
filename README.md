@@ -43,7 +43,7 @@ triply works in a folder you choose, for example `Trips` on your desktop, with o
 
 ## Requirements
 
-- Python 3, standard library only: nothing else to install.
+- Python 3.9 or later, standard library only: nothing else to install.
 
 ## Installation
 
@@ -55,6 +55,22 @@ In Claude Code:
 ```
 
 In the Claude desktop app: **Customize → Plugins**, add the marketplace `fpetroli/triply`, then install **triply**.
+
+## Development
+
+- `schemas/trip.schema.json` — the trip file (`.triply/trip.json`);
+- `schemas/profile.schema.json` — the user profile, valid for every trip (`.triply/profile.json` in the trips folder);
+- `scripts/validate.py` — checks a trip file or a profile against its schema and against the coherence rules (references, dates, planning rules):
+
+  ```
+  python3 scripts/validate.py <trip folder | trips folder | file.json> [--json]
+  ```
+
+Run the tests from the repository root:
+
+```
+python3 -m unittest discover -s tests
+```
 
 ## License
 

@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "trip": {
+    "id": "tuscany-2027",
+    "title": "Toscana 2027",
+    "status": "planning",
+    "language": "it",
+    "map_provider": "osm",
+    "currency": "EUR",
+    "created": "2027-03-01",
+    "updated": "2027-03-10"
+  },
+  "progress": {
+    "phase": "verification",
+    "next_step": "Check the opening hours of the Uffizi on day 2.",
+    "open_points": [
+      {"id": "siena-parking", "text": "Where to park in Siena?", "phase": "days", "created": "2027-03-08"}
+    ],
+    "log": [
+      {"date": "2027-03-02", "phase": "destination", "choice": "Tuscany", "reason": "Short trip by train, art and food."},
+      {"date": "2027-03-05", "phase": "route", "choice": "Two nights in Florence, one in Siena"}
+    ]
+  },
+  "travellers": [
+    {
+      "id": "anna",
+      "label": "Anna",
+      "age_group": "adult",
+      "citizenships": ["IT"],
+      "documents": [{"type": "id_card", "country": "IT", "expires": "2031-05-01"}],
+      "pace": "moderate",
+      "interests": ["art", "food"]
+    }
+  ],
+  "constraints": {
+    "origin": {"name": "Milano", "place": "milan-central"},
+    "dates": {"start": "2027-06-10", "end": "2027-06-12"},
+    "trip_types": ["city", "art"],
+    "avoid": ["long drives"],
+    "transport_preferences": ["train"],
+    "budget": {"amount": 800, "currency": "EUR", "scope": "total"}
+  },
+  "options": [
+    {"id": "tuscany", "kind": "destination", "title": "Toscana", "pros": ["Close by train"], "cons": ["Crowded in June"], "chosen": true},
+    {"id": "liguria", "kind": "destination", "title": "Liguria", "chosen": false},
+    {"id": "florence-siena", "kind": "route", "title": "Firenze e Siena", "chosen": true}
+  ],
+  "places": {
+    "milan-central": {"name": "Milano Centrale", "kind": "station", "lat": 45.4862, "lon": 9.2045, "country": "IT"},
+    "florence": {"name": "Firenze", "kind": "city", "lat": 43.7696, "lon": 11.2558, "country": "IT"},
+    "siena": {"name": "Siena", "kind": "city", "lat": 43.3188, "lon": 11.3308, "country": "IT"},
+    "uffizi": {
+      "name": "Galleria degli Uffizi",
+      "kind": "museum",
+      "lat": 43.7678,
+      "lon": 11.2553,
+      "provider_ids": {"osm": "way/24398143"},
+      "opening_hours": {"raw": "Tu-Su 08:15-18:30", "source": {"provider": "osm", "checked_at": "2027-03-09"}},
+      "verification": {"status": "ok", "checked_at": "2027-03-09"}
+    },
+    "ponte-vecchio": {"name": "Ponte Vecchio", "kind": "attraction", "lat": 43.768, "lon": 11.2531},
+    "boboli": {"name": "Giardino di Boboli", "kind": "nature", "lat": 43.7625, "lon": 11.2484},
+    "piazza-campo": {"name": "Piazza del Campo", "kind": "attraction", "lat": 43.3186, "lon": 11.3317}
+  },
+  "stays": [
+    {"id": "stay-florence", "place": "florence", "check_in": "2027-06-10", "check_out": "2027-06-12", "booking": {"status": "booked", "cost": {"amount": 240, "currency": "EUR"}, "reference": "ABC123"}},
+    {"id": "stay-siena", "place": "siena", "check_in": "2027-06-12", "check_out": "2027-06-13", "booking": {"status": "to_book", "search_url": "https://www.booking.com/searchresults.html?ss=Siena&checkin=2027-06-12&checkout=2027-06-13"}}
+  ],
+  "transports": [
+    {"id": "train-out", "mode": "train", "from": "milan-central", "to": "florence", "date": "2027-06-10", "depart_time": "08:10", "arrive_time": "10:05", "booking": {"status": "booked"}},
+    {"id": "bus-siena", "mode": "bus", "from": "florence", "to": "siena", "date": "2027-06-12", "duration_min": 75, "booking": {"status": "not_needed"}}
+  ],
+  "days": [
+    {
+      "date": "2027-06-10",
+      "base": "stay-florence",
+      "theme": "Arrivo e centro storico",
+      "pace": "relaxed",
+      "candidates": ["ponte-vecchio", "boboli"],
+      "items": [
+        {"place": "ponte-vecchio", "role": "main", "start": "15:00", "duration_min": 60,
+         "to_next": {"mode": "walk", "minutes": 10, "distance_km": 0.8, "source": {"provider": "osm", "checked_at": "2027-03-09"}}},
+        {"place": "boboli", "role": "backup", "start": "16:30", "duration_min": 90}
+      ]
+    },
+    {
+      "date": "2027-06-11",
+      "base": "stay-florence",
+      "theme": "Uffizi",
+      "items": [{"place": "uffizi", "role": "main", "start": "09:00", "duration_min": 180}]
+    },
+    {
+      "date": "2027-06-12",
+      "base": "stay-siena",
+      "theme": "Siena",
+      "items": [{"place": "piazza-campo", "role": "main", "start": "11:00"}]
+    }
+  ],
+  "deadlines": [
+    {"id": "book-siena", "title": "Book the stay in Siena", "due": "2027-05-10", "kind": "booking", "related": "stay-siena", "done": false},
+    {"id": "book-uffizi", "title": "Book Uffizi tickets", "due": "2027-05-25", "kind": "booking", "related": "uffizi", "search_url": "https://www.uffizi.it/", "done": false}
+  ],
+  "entry_requirements": [
+    {"country": "IT", "traveller": "anna", "requirement": "No document needed for a domestic trip; carry an ID.", "status": "ok",
+     "source": {"provider": "web", "url": "https://www.viaggiaresicuri.it/", "checked_at": "2027-03-03"}}
+  ],
+  "weather": [
+    {"place": "florence", "start": "2027-06-10", "end": "2027-06-12", "kind": "climate", "summary": "Warm and mostly dry", "temp_min_c": 16, "temp_max_c": 29, "precipitation_mm": 50,
+     "source": {"provider": "open-meteo", "checked_at": "2027-03-09"}}
+  ],
+  "packing": [
+    {"item": "ID card", "category": "documents", "packed": false},
+    {"item": "Sun hat", "category": "clothing", "reason": "Warm weather", "packed": false}
+  ],
+  "budget": [
+    {"label": "Florence stay", "amount": 240, "currency": "EUR", "status": "confirmed", "related": "stay-florence"},
+    {"label": "Uffizi tickets", "amount": 25, "currency": "EUR", "status": "estimated", "related": "uffizi"}
+  ]
+}

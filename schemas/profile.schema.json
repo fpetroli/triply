@@ -1,0 +1,210 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/fpetroli/triply/schemas/profile.schema.json",
+  "title": "triply user profile",
+  "description": "The user's data valid for every trip (<trips folder>/.triply/profile.json), so that triply does not ask it again for each trip. Each trip keeps its own copy of the travellers.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "language",
+    "map_provider",
+    "travellers"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "language": {
+      "$ref": "#/$defs/language"
+    },
+    "map_provider": {
+      "$ref": "#/$defs/map_provider"
+    },
+    "currency": {
+      "$ref": "#/$defs/currency"
+    },
+    "home": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "lat": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "lon": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        }
+      },
+      "description": "Usual place of departure."
+    },
+    "travellers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/traveller"
+      },
+      "description": "People who usually travel with the user, the user included."
+    },
+    "preferences": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "pace": {
+          "$ref": "#/$defs/pace"
+        },
+        "interests": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "avoid": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "transport_preferences": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/transport_mode"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "description": "Lower-case letters, digits and hyphens."
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "language": {
+      "type": "string",
+      "pattern": "^[a-z]{2}(-[A-Z]{2})?$"
+    },
+    "currency": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$"
+    },
+    "country": {
+      "type": "string",
+      "pattern": "^[A-Z]{2}$",
+      "description": "ISO 3166-1 alpha-2 code."
+    },
+    "map_provider": {
+      "enum": [
+        "osm",
+        "mapbox",
+        "google"
+      ]
+    },
+    "pace": {
+      "enum": [
+        "relaxed",
+        "moderate",
+        "intense"
+      ]
+    },
+    "transport_mode": {
+      "enum": [
+        "flight",
+        "train",
+        "ferry",
+        "bus",
+        "car",
+        "car_rental",
+        "other"
+      ]
+    },
+    "traveller": {
+      "type": "object",
+      "required": [
+        "id",
+        "label",
+        "age_group"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "description": "A name or a label chosen by the user."
+        },
+        "age_group": {
+          "enum": [
+            "infant",
+            "child",
+            "teen",
+            "adult",
+            "senior"
+          ]
+        },
+        "citizenships": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/country"
+          }
+        },
+        "documents": {
+          "description": "Travel documents. Only type, issuing country and expiry: never document numbers.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "type",
+              "country"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "enum": [
+                  "passport",
+                  "id_card",
+                  "visa",
+                  "driving_licence",
+                  "other"
+                ]
+              },
+              "country": {
+                "$ref": "#/$defs/country"
+              },
+              "expires": {
+                "$ref": "#/$defs/date"
+              }
+            }
+          }
+        },
+        "pace": {
+          "$ref": "#/$defs/pace"
+        },
+        "interests": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "mobility_notes": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

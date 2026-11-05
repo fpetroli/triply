@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "language": "it",
+  "map_provider": "osm",
+  "currency": "EUR",
+  "home": {"name": "Milano", "lat": 45.4642, "lon": 9.19},
+  "travellers": [
+    {"id": "anna", "label": "Anna", "age_group": "adult", "citizenships": ["IT"],
+     "documents": [{"type": "passport", "country": "IT", "expires": "2030-01-15"}],
+     "pace": "moderate", "interests": ["art", "food"]}
+  ],
+  "preferences": {"pace": "moderate", "interests": ["art"], "avoid": ["long drives"], "transport_preferences": ["train"]}
+}
