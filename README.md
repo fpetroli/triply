@@ -2,7 +2,7 @@
 
 A plugin for Claude that helps you plan and organize your vacations.
 
-> **Status:** early development. The plugin can be installed, but it does nothing yet.
+> **Status:** early development. triply can set up your trips folder and collect the brief of a new trip; the next phases (destination, entry requirements, route, days, checks, documents) are coming.
 
 ## What it will do
 
@@ -56,10 +56,18 @@ In Claude Code:
 
 In the Claude desktop app: **Customize → Plugins**, add the marketplace `fpetroli/triply`, then install **triply**.
 
+## Permissions
+
+triply works through one script of its own, `scripts/trips.py`, which finds and creates your trips folder and checks the trip files. The first time, Claude asks your permission to run it: choose **"Yes, and don't ask again"**. After an update of the plugin it may ask once more.
+
+triply asks to keep your trips folder inside the folder where you open Claude, and next time to open Claude directly there: that way changes to the trip files do not ask for permission one by one.
+
 ## Development
 
 - `schemas/trip.schema.json` — the trip file (`.triply/trip.json`);
 - `schemas/profile.schema.json` — the user profile, valid for every trip (`.triply/profile.json` in the trips folder);
+- `skills/plan-trip/` — the planning skill: `SKILL.md` and the instructions of each phase in `references/`;
+- `scripts/trips.py` — what the skill uses to work on the trips folder: find it, create it, create a trip, check a file, print the instructions of a phase;
 - `scripts/validate.py` — checks a trip file or a profile against its schema and against the coherence rules (references, dates, planning rules):
 
   ```

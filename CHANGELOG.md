@@ -13,3 +13,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Trip file schema (`schemas/trip.schema.json`) and user profile schema (`schemas/profile.schema.json`).
 - `scripts/validate.py`: checks a trip file or a user profile against its schema and the coherence rules; standard library only, Python 3.9 or later.
 - Tests for the checks.
+- `plan-trip` skill: finds or resumes a trip, first setup (trips folder, user profile, map service) and the trip in brief (who, when, from where, kind of trip, destination, budget).
+- `scripts/trips.py`: finds and creates the trips folder, creates a trip, checks a file, prints the instructions of a phase.
