@@ -23,7 +23,7 @@ Request of the user: $ARGUMENTS
 All file work goes through one script. Run it exactly like this, with these paths:
 
 ```
-python3 "${CLAUDE_PLUGIN_ROOT}/scripts/trips.py" <command> …
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/triply.py" <command> …
 ```
 
 | Command | What it does |
@@ -31,12 +31,15 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/trips.py" <command> …
 | `locate --data "${CLAUDE_PLUGIN_DATA}"` | Finds the trips folder (from the current folder upwards, then the one remembered), whether the user profile exists, the trip the current folder belongs to, and the list of trips with phase and next step |
 | `init "<folder>" --data "${CLAUDE_PLUGIN_DATA}"` | Creates the trips folder and remembers it; never touches existing files |
 | `new-trip "<trips folder>" --title "<title>" [--travellers id,id]` | Creates the trip folder and its trip file (status `idea`, phase `brief`), with language, map service, currency and the chosen travellers taken from the profile |
+| `rename-trip "<trip folder>" --title "<title>"` | Renames the trip folder after a new title, with everything inside it, and updates the title in the trip file |
 | `check "<trip folder or trips folder>"` | Checks the trip file or the profile; for a valid trip file it also sets the date of the last change |
-| `guide <topic>` | Prints the instructions on a topic: the phases (`setup`, `brief`) and the rules of the trip file (`trip-file`) |
+| `place "<name>" [--country XX] [--language xx]` | Looks a place up by name: the best matches, with region, country and coordinates |
+| `climate --lat <lat> --lon <lon> --from MM-DD --to MM-DD` | Typical weather of that period of the year at that place, averaged over the last years, with its source (`--place "<name>"` instead of the coordinates takes the best match) |
+| `guide <topic>` | Prints the instructions on a topic: the phases (`setup`, `brief`, `destination`) and the rules of the trip file (`trip-file`) |
 
 Run **one command per call**, never chained with `;`, `&&` or pipes, and never with the trip data on the command line: the user approves this script once ("don't ask again"), and only a plain call matches that approval.
 
-The output is JSON, except for `guide`. Exit status 1 means refused or errors found; read the message and fix the cause.
+The output is JSON, except for `guide`. Exit status 1 means refused, errors found, or a service unavailable (`unavailable`); read the message and fix the cause, or go on without that data and say so.
 
 Read the instructions of a phase only with `guide`, never by opening files of the plugin: the plugin folder is often outside the folders you may read without asking the user.
 
@@ -57,7 +60,7 @@ Read the instructions of a phase only with `guide`, never by opening files of th
 |---|---|---|
 | 0 — first setup (`setup`) | Trips folder, user profile, map service | `guide setup` |
 | 1 — the trip in brief (`brief`) | Who, when, from where, what kind of trip, destination, budget | `guide brief` |
-| 2 — destination (`destination`) | Three proposals, the user chooses | not available yet |
+| 2 — destination (`destination`) | Proposals, or the comparison of the user's candidates, or the confirmation of a destination already decided; the user chooses | `guide destination` |
 | 3 — entry requirements (`entry_requirements`) | Passports, visas, other requirements, with sources | not available yet |
 | 4 — route and bases (`route`) | Where to sleep, how many nights, moves between bases | not available yet |
 | 5 — the days (`days`) | Overview of the days, then proposals, then details | not available yet |

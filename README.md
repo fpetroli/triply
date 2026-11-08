@@ -2,7 +2,7 @@
 
 A plugin for Claude that helps you plan and organize your vacations.
 
-> **Status:** early development. triply can set up your trips folder and collect the brief of a new trip; the next phases (destination, entry requirements, route, days, checks, documents) are coming.
+> **Status:** early development. triply can set up your trips folder, collect the brief of a new trip and help you choose the destination; the next phases (entry requirements, route, days, checks, documents) are coming.
 
 ## What it will do
 
@@ -58,7 +58,7 @@ In the Claude desktop app: **Customize → Plugins**, add the marketplace `fpetr
 
 ## Permissions
 
-triply works through one script of its own, `scripts/trips.py`, which finds and creates your trips folder and checks the trip files. The first time, Claude asks your permission to run it: choose **"Yes, and don't ask again"**. After an update of the plugin it may ask once more.
+triply works through one script of its own, `scripts/triply.py`, which finds and creates your trips folder, checks the trip files and asks Open-Meteo for the climate of a place. The first time, Claude asks your permission to run it: choose **"Yes, and don't ask again"**. After an update of the plugin it may ask once more.
 
 triply asks to keep your trips folder inside the folder where you open Claude, and next time to open Claude directly there: that way changes to the trip files do not ask for permission one by one.
 
@@ -67,7 +67,8 @@ triply asks to keep your trips folder inside the folder where you open Claude, a
 - `schemas/trip.schema.json` — the trip file (`.triply/trip.json`);
 - `schemas/profile.schema.json` — the user profile, valid for every trip (`.triply/profile.json` in the trips folder);
 - `skills/plan-trip/` — the planning skill: `SKILL.md` and the instructions of each phase in `references/`;
-- `scripts/trips.py` — what the skill uses to work on the trips folder: find it, create it, create a trip, check a file, print the instructions of a phase;
+- `scripts/triply.py` — the single entry point the skill uses: find and create the trips folder, create and rename a trip, check a file, look a place up, get the climate of a period, print the instructions of a phase;
+- `scripts/climate.py` — places and climate from [Open-Meteo](https://open-meteo.com/) (geocoding and historical weather);
 - `scripts/validate.py` — checks a trip file or a profile against its schema and against the coherence rules (references, dates, planning rules):
 
   ```

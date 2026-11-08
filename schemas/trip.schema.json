@@ -267,6 +267,7 @@
           "temp_min_c": {"type": "number"},
           "temp_max_c": {"type": "number"},
           "precipitation_mm": {"type": "number", "minimum": 0},
+          "rain_days": {"type": "number", "minimum": 0, "description": "Days with at least 1 mm of precipitation in the period (an average, for climate)."},
           "source": {"$ref": "#/$defs/source"}
         }
       }

@@ -10,7 +10,7 @@ Read the profile (`<trips folder>/.triply/profile.json`) and the user's request.
 2. **When**: exact dates, or a period and a length ("two weeks in August").
 3. **From where**: default, the usual departure in the profile.
 4. **What kind of trip** (sea, cities, nature, culture, food, relax…) and **what to avoid**: default, the profile's preferences.
-5. **Destination**: already decided (which), or still open (any idea or limit: "Europe", "within 3 hours of flight", "somewhere warm").
+5. **Destination**: already decided (which), a few candidates, or still open (any idea or limit: "Europe", "within 3 hours of flight", "somewhere warm"). And whether they already have **a trip in mind**: places they want to see, stops, an order.
 6. **Budget**, optional: an indicative amount, total or per person.
 7. **Means of transport** preferred or excluded: default, the profile's.
 
@@ -30,9 +30,11 @@ When the request already answers everything, skip the questions and go on.
      - when the user gives no year, take the first future occurrence;
    - `constraints.trip_types`, `constraints.avoid`, `constraints.transport_preferences`, `constraints.budget` (`amount`, `currency`, `scope`: `total` or `per_person`);
    - a decided destination → one entry in `options`: `{"id": "<slug>", "kind": "destination", "title": "<destination>", "chosen": true}`;
+   - candidates named by the user → one entry each in `options`, `"kind": "destination"`, `"chosen": false`;
+   - a trip already in mind → one entry in `options`: `{"id": "<slug>", "kind": "route", "title": "<short name>", "summary": "<places and order, as the user said them>", "chosen": false}`; phase 4 starts from it;
    - `progress.log`: one entry per choice of this phase that has a reason worth keeping ("dates: second half of August — school holidays");
    - `progress.open_points`: what is still uncertain;
-   - `progress.phase`: `destination` if the destination is still open, otherwise `entry_requirements`;
+   - `progress.phase`: `destination`, also when the destination is decided: phase 2 then only confirms it with climate, how to get there and a first notice on documents;
    - `progress.next_step`: one sentence on what comes next.
 5. Run `check` on the trip folder. Fix every error. Tell the user about the warnings that matter to them, in plain words (for example a passport that expires before the end of the trip).
 
@@ -45,4 +47,4 @@ Tell the user, in a few lines:
 - the open points, if any;
 - the next step.
 
-The next phases are not available yet: say plainly that this version of triply stops here, that everything is saved, and that the next version will continue from this point.
+Then propose to go on with phase 2, the destination: `guide destination`.
