@@ -245,9 +245,19 @@ def _stays_and_transports(data: Dict[str, Any], report: Report) -> None:
             report.error(f"/stays/{i}/check_out", "must be after 'check_in'")
         if start and end and (check_in < start or check_out > end + datetime.timedelta(days=1)):
             report.warning(f"/stays/{i}", "falls outside the trip dates")
+    moves_on = {move["date"] for move in data.get("transports", [])}
     for (i, a), (j, b) in zip(stays, stays[1:]):
         if _date(b["check_in"]) < _date(a["check_out"]):
             report.warning(f"/stays/{j}", f"overlaps with the stay '{a['id']}'")
+        elif _date(b["check_in"]) > _date(a["check_out"]) and a["check_out"] not in moves_on:
+            report.warning(
+                f"/stays/{j}/check_in",
+                f"no stay for the nights from {a['check_out']} to {b['check_in']}, and no move that day",
+            )
+    for position, (i, stay) in enumerate(stays):
+        nights = (_date(stay["check_out"]) - _date(stay["check_in"])).days
+        if nights == 1 and 0 < position < len(stays) - 1:
+            report.warning(f"/stays/{i}", "only one night in the middle of the trip: check that it is wanted")
 
     for i, move in enumerate(data.get("transports", [])):
         date = _date(move["date"])
@@ -255,6 +265,11 @@ def _stays_and_transports(data: Dict[str, Any], report: Report) -> None:
             report.warning(f"/transports/{i}/date", f"{move['date']} is outside the trip dates")
         if move["from"] == move["to"]:
             report.error(f"/transports/{i}/to", "is the same place as 'from'")
+        if "duration_min" in move and not move.get("duration_estimated") and "duration_source" not in move:
+            report.warning(
+                f"/transports/{i}/duration_min",
+                "has no source: mark it as an estimate (duration_estimated) or give its source",
+            )
 
 
 def _options(data: Dict[str, Any], report: Report) -> None:

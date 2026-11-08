@@ -68,7 +68,7 @@
   ],
   "transports": [
     {"id": "train-out", "mode": "train", "from": "milan-central", "to": "florence", "date": "2027-06-10", "depart_time": "08:10", "arrive_time": "10:05", "booking": {"status": "booked"}},
-    {"id": "bus-siena", "mode": "bus", "from": "florence", "to": "siena", "date": "2027-06-12", "duration_min": 75, "booking": {"status": "not_needed"}}
+    {"id": "bus-siena", "mode": "bus", "from": "florence", "to": "siena", "date": "2027-06-12", "duration_min": 75, "duration_estimated": true, "booking": {"status": "not_needed"}}
   ],
   "days": [
     {

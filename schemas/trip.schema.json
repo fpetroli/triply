@@ -168,6 +168,9 @@
           "depart_time": {"$ref": "#/$defs/time"},
           "arrive_time": {"$ref": "#/$defs/time"},
           "duration_min": {"type": "integer", "minimum": 0},
+          "duration_estimated": {"type": "boolean", "description": "True when duration_min is an indicative estimate, to be checked with the map service in the verification phase."},
+          "duration_source": {"$ref": "#/$defs/source", "description": "Where duration_min comes from, once it is checked."},
+          "notes": {"type": "string", "description": "For example a stopover, or a day trip on the way."},
           "booking": {"$ref": "#/$defs/booking"}
         }
       }

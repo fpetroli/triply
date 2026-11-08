@@ -2,7 +2,7 @@
 
 A plugin for Claude that helps you plan and organize your vacations.
 
-> **Status:** early development. triply can set up your trips folder, collect the brief of a new trip, help you choose the destination and check the entry requirements of every traveller on official sources; the next phases (route, days, checks, documents) are coming.
+> **Status:** early development. triply can set up your trips folder, collect the brief of a new trip, help you choose the destination, check the entry requirements of every traveller on official sources and plan the route with its bases; the next phases (days, checks, bookings, documents) are coming.
 
 ## What it will do
 

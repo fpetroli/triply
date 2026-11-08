@@ -35,7 +35,7 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/triply.py" <command> …
 | `check "<trip folder or trips folder>"` | Checks the trip file or the profile; for a valid trip file it also sets the date of the last change |
 | `place "<name>" [--country XX] [--language xx]` | Looks a place up by name: the best matches, with region, country and coordinates |
 | `climate --lat <lat> --lon <lon> --from MM-DD --to MM-DD` | Typical weather of that period of the year at that place, averaged over the last years, with its source (`--place "<name>"` instead of the coordinates takes the best match) |
-| `guide <topic>` | Prints the instructions on a topic: the phases (`setup`, `brief`, `destination`, `entry-requirements`) and the rules of the trip file (`trip-file`) |
+| `guide <topic>` | Prints the instructions on a topic: the phases (`setup`, `brief`, `destination`, `entry-requirements`, `route`) and the rules of the trip file (`trip-file`) |
 
 Run **one command per call**, never chained with `;`, `&&` or pipes, and never with the trip data on the command line: the user approves this script once ("don't ask again"), and only a plain call matches that approval.
 
@@ -62,7 +62,7 @@ Read the instructions of a phase only with `guide`, never by opening files of th
 | 1 — the trip in brief (`brief`) | Who, when, from where, what kind of trip, destination, budget | `guide brief` |
 | 2 — destination (`destination`) | Proposals, or the comparison of the user's candidates, or the confirmation of a destination already decided; the user chooses | `guide destination` |
 | 3 — entry requirements (`entry_requirements`) | Documents, visas and authorizations, minors, health, driving licence, for every traveller and country, from official sources | `guide entry-requirements` |
-| 4 — route and bases (`route`) | Where to sleep, how many nights, moves between bases | not available yet |
+| 4 — route and bases (`route`) | Exact dates, where to sleep, how many nights, moves between bases with indicative times | `guide route` |
 | 5 — the days (`days`) | Overview of the days, then proposals, then details | not available yet |
 | 6 — verification (`verification`) | Places exist and are open; travel times are realistic | not available yet |
 | 7 — bookings and deadlines (`bookings`) | What to book and by when, with prefilled search links | not available yet |

@@ -232,6 +232,42 @@ class TripTest(unittest.TestCase):
         self.today = datetime.date(2028, 1, 1)
         self.assertNotIn("checked_at", " ".join(messages(self.check())))
 
+    def add_stay(self, stay_id, check_in, check_out):
+        self.trip["stays"].append(
+            {"id": stay_id, "place": "siena", "check_in": check_in, "check_out": check_out, "booking": {"status": "to_book"}}
+        )
+
+    def test_gap_between_stays(self):
+        self.trip["constraints"]["dates"]["end"] = "2027-06-16"
+        self.add_stay("stay-later", "2027-06-14", "2027-06-16")
+        self.assertIssue("warning", "/stays/2/check_in", "no stay for the nights from 2027-06-13 to 2027-06-14")
+
+    def test_gap_covered_by_a_move(self):
+        self.trip["constraints"]["dates"]["end"] = "2027-06-16"
+        self.add_stay("stay-later", "2027-06-14", "2027-06-16")
+        self.trip["transports"].append(
+            {"id": "night-ferry", "mode": "ferry", "from": "siena", "to": "florence", "date": "2027-06-13", "booking": {"status": "to_book"}}
+        )
+        self.assertNotIn("no stay for the nights", " ".join(messages(self.check())))
+
+    def test_single_night_in_the_middle(self):
+        self.trip["constraints"]["dates"]["end"] = "2027-06-16"
+        self.add_stay("stay-later", "2027-06-13", "2027-06-16")
+        self.assertIssue("warning", "/stays/1", "only one night in the middle")
+
+    def test_single_night_at_the_end_is_fine(self):
+        self.assertNotIn("only one night", " ".join(messages(self.check())))
+
+    def test_duration_without_source(self):
+        del self.trip["transports"][1]["duration_estimated"]
+        self.assertIssue("warning", "/transports/1/duration_min", "has no source")
+
+    def test_duration_with_source(self):
+        move = self.trip["transports"][1]
+        del move["duration_estimated"]
+        move["duration_source"] = {"provider": "osm", "checked_at": "2027-03-10"}
+        self.assertNotIn("has no source", " ".join(messages(self.check())))
+
     def test_updated_before_created(self):
         self.trip["trip"]["updated"] = "2027-02-01"
         self.assertIssue("error", "/trip/updated", "earlier than the creation date")

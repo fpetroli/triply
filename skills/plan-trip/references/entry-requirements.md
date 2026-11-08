@@ -85,6 +85,8 @@ When something is `action_needed` or `unknown`, ask whether to go on with the ro
 - `progress.phase` → `route`; `next_step`;
 - run `check`.
 
+Then propose to go on with phase 4, the route and the bases: `guide route`.
+
 ## Checking again
 
 When the user asks to check again, or a check is more than three months old (`check` warns about it), repeat sections 2 to 4 for the entries concerned: update `status`, `source.checked_at` and the deadlines, and say what changed. When the travellers, the destination, the dates or the stopovers change, check again the entries they touch.
