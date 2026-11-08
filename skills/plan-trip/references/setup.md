@@ -19,7 +19,7 @@ Say in one sentence that this is the first time and that triply needs a few thin
    - **Mapbox** — free account; more precise travel times.
    - **Google Maps** — free monthly quota, but activating it requires a credit card.
 
-   If the user chooses Mapbox or Google, say that the access key will be asked only when the check of the places is available; there is nothing to do now. Never ask for a key in this phase, and never write a key in the profile.
+   If the user chooses Mapbox or Google, say that the access key will be asked when the days are planned (phase 5); there is nothing to do now. Never ask for a key in this phase, and never write a key in the profile.
 
 ## 2. Create
 

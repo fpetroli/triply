@@ -21,3 +21,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Entry requirements in the trip file: `kind`, `mandatory` and `check_url`; the source is required unless the status is `unknown`. The check warns about requirements still to do or not verified, and about checks older than three months.
 - Phase 4 of the planning flow, the route and the bases: exact dates, bases and nights, moves between bases with indicative times, following rules of realism.
 - Transports in the trip file: `duration_estimated`, `duration_source` and `notes`. The check warns about nights without a stay, a single night in the middle of the trip, and a duration with no source.
+- Phase 5 of the planning flow, the days: overview, proposals with the places looked up on the user's map service, then the detail of each day with a main activity and a backup.
+- `find-place`: points of interest by name with OpenStreetMap (Nominatim), Mapbox (Search Box) or Google (Places API, New).
+- `keys`, `set-key`, `forget-key`: the keys of Mapbox and Google, kept in the plugin data folder, never in the trips folder.

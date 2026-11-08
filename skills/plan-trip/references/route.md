@@ -55,4 +55,4 @@ Then one line comparing the routes. Save them **before** asking: one entry in `o
 
 ## 5. Close the phase
 
-Tell the user, in a few lines: the route with nights per base, the dates, the moves with their indicative times, the day trips planned for later, what is still to do (bookings come in phase 7, after the days), and the next step: the overview of the days.
+Tell the user, in a few lines: the route with nights per base, the dates, the moves with their indicative times, the day trips planned for later, what is still to do (bookings come in phase 7, after the days), and the next step: the overview of the days. Then propose to go on with phase 5: `guide days`.

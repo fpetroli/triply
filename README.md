@@ -2,7 +2,7 @@
 
 A plugin for Claude that helps you plan and organize your vacations.
 
-> **Status:** early development. triply can set up your trips folder, collect the brief of a new trip, help you choose the destination, check the entry requirements of every traveller on official sources and plan the route with its bases; the next phases (days, checks, bookings, documents) are coming.
+> **Status:** early development. triply can set up your trips folder, collect the brief of a new trip, help you choose the destination, check the entry requirements of every traveller on official sources and plan the route with its bases and the days; the next phases (checks, bookings, weather and packing, documents) are coming.
 
 ## What it will do
 
@@ -37,6 +37,8 @@ Weather comes from [Open-Meteo](https://open-meteo.com/) (free for non-commercia
 
 triply never requires a paid service.
 
+With Mapbox or Google, triply asks for the key the first time it looks places up, and keeps it in the plugin's own data folder on your computer, readable only by you and outside your trips folder, so it never ends up in a trip you share. Use the Mapbox *public* token (`pk.…`); for Google, a key restricted to the Places API (New) and the Routes API. If you prefer not to paste the key in the chat, triply tells you which file to write it in. With OpenStreetMap, place data is © OpenStreetMap contributors.
+
 ## Your trips folder
 
 triply works in a folder you choose, for example `Trips` on your desktop, with one folder per trip. The files meant for you (itinerary, deadlines, packing list) are at the top of each trip folder, in your language; the files meant for the AI are in a hidden `.triply` folder. triply only rewrites the files it generates and never changes or deletes yours.
@@ -69,8 +71,9 @@ To check the entry requirements, Claude searches the web and reads the official 
 - `schemas/trip.schema.json` — the trip file (`.triply/trip.json`);
 - `schemas/profile.schema.json` — the user profile, valid for every trip (`.triply/profile.json` in the trips folder);
 - `skills/plan-trip/` — the planning skill: `SKILL.md` and the instructions of each phase in `references/`;
-- `scripts/triply.py` — the single entry point the skill uses: find and create the trips folder, create and rename a trip, check a file, look a place up, get the climate of a period, print the instructions of a phase;
+- `scripts/triply.py` — the single entry point the skill uses: find and create the trips folder, create and rename a trip, check a file, look a place up, get the climate of a period, look points of interest up, keep the map service keys, print the instructions of a phase;
 - `scripts/climate.py` — places and climate from [Open-Meteo](https://open-meteo.com/) (geocoding and historical weather);
+- `scripts/places.py` — points of interest by name with OpenStreetMap (Nominatim), Mapbox (Search Box) or Google (Places API, New);
 - `scripts/validate.py` — checks a trip file or a profile against its schema and against the coherence rules (references, dates, planning rules):
 
   ```

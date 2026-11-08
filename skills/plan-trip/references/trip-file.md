@@ -24,6 +24,7 @@ Use only the fields shown in these instructions and in the examples of the phase
 - **data from outside** (opening hours, travel times, requirements, weather): always with its `source` (service, link, date of consultation).
 - **entry requirements**: `kind` is `document`, `visa`, `transit`, `minors`, `health`, `driving` or `other`; `status` is `ok`, `action_needed` or `unknown`; a `source` is required unless the status is `unknown`.
 - **travel times**: a `duration_min` estimated by you has `"duration_estimated": true`; once checked with the map service it has `duration_source` instead.
+- **keys** of Mapbox and Google: only through `set-key`; never in the trip file, the profile or any other file of the trips folder.
 
 ## The progress section
 

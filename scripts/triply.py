@@ -11,6 +11,10 @@ Usage:
     python3 triply.py check PATH
     python3 triply.py place NAME [--country CODE] [--language CODE]
     python3 triply.py climate (--place NAME [--country CODE] | --lat LAT --lon LON) --from MM-DD --to MM-DD [--years N]
+    python3 triply.py find-place QUERY [QUERY ...] --provider osm|mapbox|google [--near LAT,LON] [--country CODE] [--language CODE] [--limit N] [--data DIR]
+    python3 triply.py keys --data DIR
+    python3 triply.py set-key mapbox|google KEY --data DIR
+    python3 triply.py forget-key mapbox|google --data DIR
     python3 triply.py guide TOPIC
 
 Every command prints JSON on standard output.
@@ -50,6 +54,19 @@ climate
     The typical weather of a period of the year at a place, averaged over the
     last years (Open-Meteo historical weather), with its source.
 
+find-place
+    Looks points of interest up by name (a temple, a museum, a beach) with a
+    map service: OpenStreetMap (no account), Mapbox or Google (with the key
+    saved by ``set-key``). Up to ten queries per call. For each one, the best
+    matches with address, coordinates, category and the id at the provider.
+
+keys, set-key, forget-key
+    The keys of Mapbox and Google live in ``--data/keys.json``, readable only
+    by the user, outside the trips folder: they never end up in a trip that is
+    shared. ``keys`` says which keys are saved and where the file is (the user
+    can also write it by hand); ``set-key`` saves a key after a check of its
+    form; ``forget-key`` removes it. A key is never printed.
+
 guide
     Prints the instructions of the planning skill on TOPIC (a file in
     ``skills/plan-trip/references``). Claude reads them this way because the
@@ -75,12 +92,16 @@ from typing import Any, Dict, List, Optional
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import climate  # noqa: E402
+import places  # noqa: E402
 import validate  # noqa: E402
 
 TRIPLY = ".triply"
 TRIP_FILE = "trip.json"
 PROFILE_FILE = "profile.json"
 CONFIG_FILE = "config.json"
+KEYS_FILE = "keys.json"
+KEY_PROVIDERS = ("mapbox", "google")
+MAX_QUERIES = 10
 GUIDES = Path(__file__).resolve().parent.parent / "skills" / "plan-trip" / "references"
 
 # Characters that are not allowed in folder names on Windows, macOS or Linux.
@@ -353,6 +374,82 @@ def cmd_check(target: Path) -> Dict[str, Any]:
     }
 
 
+def _need_data(data_dir: Optional[Path]) -> Path:
+    if data_dir is None:
+        raise RefusedError("give --data, the folder where the plugin keeps its own data")
+    return data_dir
+
+
+def load_keys(data_dir: Path) -> Dict[str, str]:
+    try:
+        keys = read_json(data_dir / KEYS_FILE)
+    except FileNotFoundError:
+        return {}
+    except ValueError as exc:
+        raise RefusedError(f"the keys file {data_dir / KEYS_FILE} is not valid JSON: {exc}") from exc
+    if not isinstance(keys, dict):
+        raise RefusedError(f"the keys file {data_dir / KEYS_FILE} must be an object, for example {{\"mapbox\": \"pk....\"}}")
+    return {k: v.strip() for k, v in keys.items() if k in KEY_PROVIDERS and isinstance(v, str) and v.strip()}
+
+
+def check_key(provider: str, key: str) -> None:
+    if provider == "mapbox":
+        if key.startswith("sk."):
+            raise RefusedError("this is a secret Mapbox token: use a public token (it starts with 'pk.')")
+        if not re.fullmatch(r"pk\.[A-Za-z0-9_.\-]{20,}", key):
+            raise RefusedError("this does not look like a Mapbox public token (it starts with 'pk.')")
+    elif not re.fullmatch(r"[A-Za-z0-9_\-]{30,}", key):
+        raise RefusedError("this does not look like a Google API key (usually 39 characters, starting with 'AIza')")
+
+
+def cmd_keys(data_dir: Optional[Path]) -> Dict[str, Any]:
+    data_dir = _need_data(data_dir)
+    keys = load_keys(data_dir)
+    return {"file": str(data_dir / KEYS_FILE), "keys": {p: p in keys for p in KEY_PROVIDERS}}
+
+
+def cmd_set_key(provider: str, key: str, data_dir: Optional[Path]) -> Dict[str, Any]:
+    data_dir = _need_data(data_dir)
+    key = key.strip()
+    check_key(provider, key)
+    keys = load_keys(data_dir)
+    keys[provider] = key
+    write_json(data_dir / KEYS_FILE, keys)  # created readable only by the user
+    os.chmod(data_dir / KEYS_FILE, 0o600)
+    return {"saved": provider, "file": str(data_dir / KEYS_FILE)}
+
+
+def cmd_forget_key(provider: str, data_dir: Optional[Path]) -> Dict[str, Any]:
+    data_dir = _need_data(data_dir)
+    keys = load_keys(data_dir)
+    removed = keys.pop(provider, None) is not None
+    if removed:
+        write_json(data_dir / KEYS_FILE, keys)
+    return {"removed": removed, "provider": provider}
+
+
+def cmd_find_place(
+    queries: List[str],
+    provider: str,
+    near: Optional[str],
+    country: Optional[str],
+    language: str,
+    limit: int,
+    data_dir: Optional[Path],
+) -> Dict[str, Any]:
+    if not 1 <= len(queries) <= MAX_QUERIES:
+        raise RefusedError(f"give from 1 to {MAX_QUERIES} queries per call")
+    key = None
+    if provider in KEY_PROVIDERS:
+        key = load_keys(_need_data(data_dir)).get(provider)
+        if not key:
+            raise RefusedError(f"no {provider} key saved: ask the user for it, or use osm", [{"key": "missing", "provider": provider}])
+    try:
+        return places.find(provider, queries, places.parse_near(near), country, language, max(1, min(limit, 10)), key, today())
+    except places.KeyRefusedError as exc:
+        raise RefusedError(f"{provider}: {exc}", [{"key": "refused", "provider": provider}]) from exc
+
+
 def guide_topics() -> List[str]:
     return sorted(p.stem for p in GUIDES.glob("*.md"))
 
@@ -373,7 +470,7 @@ class RefusedError(Exception):
 
 
 def main(argv: Optional[List[str]] = None) -> int:
-    parser = argparse.ArgumentParser(description="triply: trips folder, trip files, places and climate.")
+    parser = argparse.ArgumentParser(description="triply: trips folder, trip files, places, climate and map service keys.")
     commands = parser.add_subparsers(dest="command", required=True)
 
     locate = commands.add_parser("locate", help="find the trips folder and the current trip")
@@ -411,6 +508,25 @@ def main(argv: Optional[List[str]] = None) -> int:
     weather.add_argument("--to", dest="end", required=True, help="last day, MM-DD")
     weather.add_argument("--years", type=int, default=5, help="years to average (default: 5)")
 
+    find = commands.add_parser("find-place", help="look points of interest up by name with a map service")
+    find.add_argument("queries", nargs="+", help="what to look for, for example 'Senso-ji, Tokyo'")
+    find.add_argument("--provider", choices=places.PROVIDERS, required=True)
+    find.add_argument("--near", help="LAT,LON to prefer results near this point")
+    find.add_argument("--country", help="two-letter country code, to narrow the search")
+    find.add_argument("--language", default="en", help="language of the names (default: en)")
+    find.add_argument("--limit", type=int, default=3, help="matches per query (default: 3)")
+    find.add_argument("--data", type=Path, help="folder where the plugin keeps its own data")
+
+    keys = commands.add_parser("keys", help="which map service keys are saved, and where")
+    keys.add_argument("--data", type=Path, required=True)
+    set_key = commands.add_parser("set-key", help="save the key of a map service")
+    set_key.add_argument("provider", choices=KEY_PROVIDERS)
+    set_key.add_argument("key")
+    set_key.add_argument("--data", type=Path, required=True)
+    forget_key = commands.add_parser("forget-key", help="remove the key of a map service")
+    forget_key.add_argument("provider", choices=KEY_PROVIDERS)
+    forget_key.add_argument("--data", type=Path, required=True)
+
     guide = commands.add_parser("guide", help="print the instructions of the planning skill on a topic")
     guide.add_argument("topic")
 
@@ -438,6 +554,18 @@ def main(argv: Optional[List[str]] = None) -> int:
             code = 0
         elif args.command == "place":
             result = cmd_place(args.name, args.country, args.language)
+            code = 0
+        elif args.command == "find-place":
+            result = cmd_find_place(args.queries, args.provider, args.near, args.country, args.language, args.limit, args.data)
+            code = 0
+        elif args.command == "keys":
+            result = cmd_keys(args.data)
+            code = 0
+        elif args.command == "set-key":
+            result = cmd_set_key(args.provider, args.key, args.data)
+            code = 0
+        elif args.command == "forget-key":
+            result = cmd_forget_key(args.provider, args.data)
             code = 0
         elif args.command == "climate":
             result = cmd_climate(args.place, args.country, args.lat, args.lon, args.start, args.end, args.years)

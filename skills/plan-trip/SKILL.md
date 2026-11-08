@@ -12,7 +12,7 @@ Request of the user: $ARGUMENTS
 
 ## How to talk to the user
 
-- Talk in the user's language. Everything you write for the user — folder names, file contents, free text in the trip file — is in that language; JSON field names stay in English.
+- Talk in the user's language, in every message, including the short notes on what you are doing. Everything you write for the user — folder names, file contents, free text in the trip file — is in that language; JSON field names stay in English.
 - The user never needs to know commands, scripts or file formats. Do not show JSON, paths inside `.triply` or script output: say what you did in plain words.
 - Ask only what you do not already know, in **one grouped message** per phase, with a sensible default the user can accept with one word.
 - At the end of every phase, stop: say in a few lines what was decided and what comes next, and continue only when the user agrees.
@@ -35,7 +35,11 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/triply.py" <command> …
 | `check "<trip folder or trips folder>"` | Checks the trip file or the profile; for a valid trip file it also sets the date of the last change |
 | `place "<name>" [--country XX] [--language xx]` | Looks a place up by name: the best matches, with region, country and coordinates |
 | `climate --lat <lat> --lon <lon> --from MM-DD --to MM-DD` | Typical weather of that period of the year at that place, averaged over the last years, with its source (`--place "<name>"` instead of the coordinates takes the best match) |
-| `guide <topic>` | Prints the instructions on a topic: the phases (`setup`, `brief`, `destination`, `entry-requirements`, `route`) and the rules of the trip file (`trip-file`) |
+| `find-place "<query>" ["<query>" …] --provider osm\|mapbox\|google [--near <lat>,<lon>] [--country XX] [--language xx] --data "${CLAUDE_PLUGIN_DATA}"` | Looks points of interest up by name (up to ten per call) with the map service of the trip: name, address, coordinates, category, id at the provider, opening hours when OpenStreetMap has them |
+| `keys --data "${CLAUDE_PLUGIN_DATA}"` | Which map service keys are saved, and the file where they live (never the keys themselves) |
+| `set-key mapbox\|google "<key>" --data "${CLAUDE_PLUGIN_DATA}"` | Saves the key of Mapbox or Google, outside the trips folder, readable only by the user |
+| `forget-key mapbox\|google --data "${CLAUDE_PLUGIN_DATA}"` | Removes a saved key |
+| `guide <topic>` | Prints the instructions on a topic: the phases (`setup`, `brief`, `destination`, `entry-requirements`, `route`, `days`) and the rules of the trip file (`trip-file`) |
 
 Run **one command per call**, never chained with `;`, `&&` or pipes, and never with the trip data on the command line: the user approves this script once ("don't ask again"), and only a plain call matches that approval.
 
@@ -63,7 +67,7 @@ Read the instructions of a phase only with `guide`, never by opening files of th
 | 2 — destination (`destination`) | Proposals, or the comparison of the user's candidates, or the confirmation of a destination already decided; the user chooses | `guide destination` |
 | 3 — entry requirements (`entry_requirements`) | Documents, visas and authorizations, minors, health, driving licence, for every traveller and country, from official sources | `guide entry-requirements` |
 | 4 — route and bases (`route`) | Exact dates, where to sleep, how many nights, moves between bases with indicative times | `guide route` |
-| 5 — the days (`days`) | Overview of the days, then proposals, then details | not available yet |
+| 5 — the days (`days`) | Overview of the days, then proposals, then details, with the places looked up on the map service | `guide days` |
 | 6 — verification (`verification`) | Places exist and are open; travel times are realistic | not available yet |
 | 7 — bookings and deadlines (`bookings`) | What to book and by when, with prefilled search links | not available yet |
 | 8 — weather and packing (`weather_packing`) | Forecast or climate, packing list | not available yet |
