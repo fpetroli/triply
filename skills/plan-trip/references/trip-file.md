@@ -22,6 +22,7 @@ Use only the fields shown in these instructions and in the examples of the phase
 - **documents**: `type` (`passport`, `id_card`, `visa`, `driving_licence`, `other`), `country`, `expires`. Never a number.
 - **costs**: only what the user says; never invent prices.
 - **data from outside** (opening hours, travel times, requirements, weather): always with its `source` (service, link, date of consultation).
+- **entry requirements**: `kind` is `document`, `visa`, `transit`, `minors`, `health`, `driving` or `other`; `status` is `ok`, `action_needed` or `unknown`; a `source` is required unless the status is `unknown`.
 
 ## The progress section
 

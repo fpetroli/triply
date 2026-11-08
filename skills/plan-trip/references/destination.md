@@ -42,4 +42,4 @@ For every destination:
 
 ## 5. Close the phase
 
-Tell the user, in a few lines: the destination chosen and why, the climate of the period, how they will get there, the notices on documents, the open points, and the next step: the check of the entry requirements.
+Tell the user, in a few lines: the destination chosen and why, the climate of the period, how they will get there, the notices on documents, the open points, and the next step: the check of the entry requirements. Then propose to go on with phase 3: `guide entry-requirements`.

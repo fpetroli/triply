@@ -7,6 +7,7 @@ Run from the repository root with:
 from __future__ import annotations
 
 import copy
+import datetime
 import io
 import json
 import sys
@@ -88,8 +89,10 @@ class TripTest(unittest.TestCase):
     def setUp(self):
         self.trip = load("valid_trip.json")
 
+    today = datetime.date(2027, 3, 10)
+
     def check(self):
-        return validate.check_trip(self.trip)
+        return validate.check_trip(self.trip, today=self.today)
 
     def assertIssue(self, level, path, fragment):
         report = self.check()
@@ -204,6 +207,30 @@ class TripTest(unittest.TestCase):
     def test_deadline_after_departure(self):
         self.trip["deadlines"][0]["due"] = "2027-06-11"
         self.assertIssue("warning", "/deadlines/0/due", "after the start of the trip")
+
+    def test_requirement_without_source(self):
+        del self.trip["entry_requirements"][0]["source"]
+        self.assertIssue("error", "/entry_requirements/0/source", "needs its source")
+
+    def test_unknown_requirement_without_source(self):
+        req = self.trip["entry_requirements"][0]
+        del req["source"]
+        req["status"] = "unknown"
+        req["check_url"] = "https://www.viaggiaresicuri.it/"
+        self.assertIssue("warning", "/entry_requirements/0/status", "not verified yet")
+        self.assertEqual(messages(self.check(), "error"), [])
+
+    def test_requirement_to_do(self):
+        self.trip["entry_requirements"][0]["status"] = "action_needed"
+        self.assertIssue("warning", "/entry_requirements/0/status", "still to do")
+
+    def test_requirement_checked_long_ago(self):
+        self.today = datetime.date(2027, 6, 5)
+        self.assertIssue("warning", "/entry_requirements/0/source/checked_at", "more than three months ago")
+
+    def test_old_check_of_a_past_trip_is_fine(self):
+        self.today = datetime.date(2028, 1, 1)
+        self.assertNotIn("checked_at", " ".join(messages(self.check())))
 
     def test_updated_before_created(self):
         self.trip["trip"]["updated"] = "2027-02-01"

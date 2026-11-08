@@ -2,7 +2,7 @@
 
 A plugin for Claude that helps you plan and organize your vacations.
 
-> **Status:** early development. triply can set up your trips folder, collect the brief of a new trip and help you choose the destination; the next phases (entry requirements, route, days, checks, documents) are coming.
+> **Status:** early development. triply can set up your trips folder, collect the brief of a new trip, help you choose the destination and check the entry requirements of every traveller on official sources; the next phases (route, days, checks, documents) are coming.
 
 ## What it will do
 
@@ -61,6 +61,8 @@ In the Claude desktop app: **Customize → Plugins**, add the marketplace `fpetr
 triply works through one script of its own, `scripts/triply.py`, which finds and creates your trips folder, checks the trip files and asks Open-Meteo for the climate of a place. The first time, Claude asks your permission to run it: choose **"Yes, and don't ask again"**. After an update of the plugin it may ask once more.
 
 triply asks to keep your trips folder inside the folder where you open Claude, and next time to open Claude directly there: that way changes to the trip files do not ask for permission one by one.
+
+To check the entry requirements, Claude searches the web and reads the official pages (foreign ministries, embassies, immigration authorities, the European Union): Claude asks your permission for web search and for each site the first time. Some official sites cannot be read automatically; triply then gives you the links to check by hand and records what you read.
 
 ## Development
 

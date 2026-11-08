@@ -52,6 +52,9 @@ PHASES = [
 ERROR = "error"
 WARNING = "warning"
 
+# Entry requirements change: a check older than this is to be done again.
+REQUIREMENTS_MAX_AGE_DAYS = 90
+
 
 class Report:
     def __init__(self) -> None:
@@ -83,7 +86,7 @@ def _date(text: Optional[str]) -> Optional[datetime.date]:
 # ---------------------------------------------------------------- trip file
 
 
-def check_trip(data: Any) -> Report:
+def check_trip(data: Any, today: Optional[datetime.date] = None) -> Report:
     report = Report()
     for path, message in schema_check.check(data, load_schema("trip")):
         report.error(path, message)
@@ -99,6 +102,7 @@ def check_trip(data: Any) -> Report:
     _options(data, report)
     _documents(data, report)
     _deadlines(data, report)
+    _requirements(data, report, today or datetime.date.today())
     _weather(data, report)
     return report
 
@@ -281,6 +285,24 @@ def _deadlines(data: Dict[str, Any], report: Report) -> None:
     for i, deadline in enumerate(data.get("deadlines", [])):
         if not deadline["done"] and _date(deadline["due"]) > start:
             report.warning(f"/deadlines/{i}/due", "falls after the start of the trip")
+
+
+def _requirements(data: Dict[str, Any], report: Report, today: datetime.date) -> None:
+    dates = data["constraints"]["dates"]
+    trip_end = _date(dates.get("end") or dates.get("window_end"))
+    for i, req in enumerate(data.get("entry_requirements", [])):
+        path = f"/entry_requirements/{i}"
+        source = req.get("source")
+        if req["status"] != "unknown" and not source:
+            report.error(f"{path}/source", f"a requirement with status '{req['status']}' needs its source")
+        if req["status"] == "action_needed":
+            report.warning(f"{path}/status", f"still to do: {req['requirement']}")
+        elif req["status"] == "unknown":
+            report.warning(f"{path}/status", f"not verified yet: {req['requirement']}")
+        if source and (trip_end is None or trip_end >= today):
+            age = (today - _date(source["checked_at"])).days
+            if age > REQUIREMENTS_MAX_AGE_DAYS:
+                report.warning(f"{path}/source/checked_at", "checked more than three months ago: check it again")
 
 
 def _weather(data: Dict[str, Any], report: Report) -> None:

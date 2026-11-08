@@ -240,15 +240,18 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["country", "traveller", "requirement", "status", "source"],
+        "required": ["country", "traveller", "requirement", "status"],
         "additionalProperties": false,
         "properties": {
           "country": {"$ref": "#/$defs/country"},
           "traveller": {"$ref": "#/$defs/id"},
+          "kind": {"enum": ["document", "visa", "transit", "minors", "health", "driving", "other"]},
           "requirement": {"type": "string", "minLength": 1},
+          "mandatory": {"type": "boolean", "description": "False for what is only recommended, for example a vaccination."},
           "status": {"enum": ["ok", "action_needed", "unknown"]},
           "notes": {"type": "string"},
-          "source": {"$ref": "#/$defs/source"}
+          "source": {"$ref": "#/$defs/source", "description": "Required when the status is ok or action_needed."},
+          "check_url": {"$ref": "#/$defs/url", "description": "Official page where the user can check by hand a requirement still unknown."}
         }
       }
     },
