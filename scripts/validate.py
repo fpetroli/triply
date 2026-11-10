@@ -224,14 +224,59 @@ def _days(data: Dict[str, Any], report: Report) -> None:
 
         last_start = None
         for i, item in enumerate(day["items"]):
+            where = f"{path}/items/{i}"
             place = data["places"].get(item["place"], {})
-            status = place.get("verification", {}).get("status")
-            if status == "failed":
-                report.warning(f"{path}/items/{i}/place", f"'{item['place']}' failed its verification")
+            check = place.get("verification", {})
+            if check.get("status") == "failed":
+                report.warning(f"{where}/place", f"'{item['place']}' failed its verification" + _because(check))
+            elif check.get("status") == "warning":
+                report.warning(f"{where}/place", f"'{item['place']}' is to review" + _because(check))
+            stop = item.get("verification", {})
+            if stop.get("status") == "failed":
+                report.warning(f"{where}/verification", f"'{item['place']}' does not work on {day['date']}" + _because(stop))
+            elif stop.get("status") == "warning":
+                report.warning(f"{where}/verification", f"'{item['place']}' on {day['date']} is to review" + _because(stop))
+            move = item.get("to_next")
+            if move is not None:
+                if i == len(day["items"]) - 1:
+                    report.warning(f"{where}/to_next", "the last stop of the day has a move to a next one")
+                if "source" not in move and not move.get("estimated"):
+                    report.error(f"{where}/to_next", "needs its source, or 'estimated': true")
             if "start" in item:
                 if last_start and item["start"] < last_start:
-                    report.warning(f"{path}/items/{i}/start", "starts earlier than the previous stop")
+                    report.warning(f"{where}/start", "starts earlier than the previous stop")
                 last_start = item["start"]
+            following = day["items"][i + 1] if i + 1 < len(day["items"]) else None
+            if following and "start" in item and "start" in following and "duration_min" in item:
+                ready = _minutes(item["start"]) + item["duration_min"] + (move or {}).get("minutes", 0)
+                late = ready - _minutes(following["start"])
+                if late > 0:
+                    report.warning(
+                        f"{path}/items/{i + 1}/start",
+                        f"not enough time to get from '{item['place']}' to '{following['place']}': {late} minutes missing",
+                    )
+        if PHASES.index(data["progress"]["phase"]) > PHASES.index("verification"):
+            _verified_day(data, day, path, report)
+
+
+def _because(check: Dict[str, Any]) -> str:
+    return f": {check['notes']}" if check.get("notes") else ""
+
+
+def _minutes(time: str) -> int:
+    hours, minutes = time.split(":")
+    return int(hours) * 60 + int(minutes)
+
+
+def _verified_day(data: Dict[str, Any], day: Dict[str, Any], path: str, report: Report) -> None:
+    """After the verification phase, every stop is checked and every move has its time."""
+    items = day["items"]
+    for i, item in enumerate(items):
+        status = data["places"].get(item["place"], {}).get("verification", {}).get("status", "unverified")
+        if status == "unverified":
+            report.warning(f"{path}/items/{i}/place", f"'{item['place']}' has not been verified")
+        if i < len(items) - 1 and "to_next" not in item:
+            report.warning(f"{path}/items/{i}/to_next", f"the move from '{item['place']}' to the next stop has no time")
 
 
 def _stays_and_transports(data: Dict[str, Any], report: Report) -> None:
@@ -270,6 +315,14 @@ def _stays_and_transports(data: Dict[str, Any], report: Report) -> None:
                 f"/transports/{i}/duration_min",
                 "has no source: mark it as an estimate (duration_estimated) or give its source",
             )
+        if move.get("duration_estimated") and "duration_source" in move:
+            report.warning(f"/transports/{i}/duration_estimated", "has a source but is still marked as an estimate")
+        elif (
+            move.get("duration_estimated")
+            and move["mode"] != "flight"  # known when the flight is chosen, in the bookings
+            and PHASES.index(data["progress"]["phase"]) > PHASES.index("verification")
+        ):
+            report.warning(f"/transports/{i}/duration_min", "is still an estimate: check it in the verification")
 
 
 def _options(data: Dict[str, Any], report: Report) -> None:

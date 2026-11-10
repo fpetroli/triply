@@ -24,3 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Phase 5 of the planning flow, the days: overview, proposals with the places looked up on the user's map service, then the detail of each day with a main activity and a backup.
 - `find-place`: points of interest by name with OpenStreetMap (Nominatim), Mapbox (Search Box) or Google (Places API, New).
 - `keys`, `set-key`, `forget-key`: the keys of Mapbox and Google, kept in the plugin data folder, never in the trips folder.
+- Phase 6 of the planning flow, the verification: places found again and open on their day, opening hours cross-checked on more than one source, times between stops and between bases, problems solved with the user.
+- `check-place`: places looked up again by id with OpenStreetMap (Nominatim lookup), Mapbox (Search Box retrieve) or Google (Place Details, with opening hours).
+- `route`: travel times with OpenStreetMap (OSRM servers of FOSSGIS), Mapbox (Directions) or Google (Routes API, also public transport).
+- `calendar`: weekdays and public holidays of a period (Nager.Date).
+- Trip file: `verification` of each stop of a day, `confirmed_by` and `notes` on opening hours, `sources` on the verification of a place, `duration_confirmed_by` on transports, `estimated` and `notes` on the moves between stops. The check warns when there is not enough time between two stops, about stops and places to review, and, after the verification, about what is still unchecked.

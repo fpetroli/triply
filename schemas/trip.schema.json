@@ -170,6 +170,7 @@
           "duration_min": {"type": "integer", "minimum": 0},
           "duration_estimated": {"type": "boolean", "description": "True when duration_min is an indicative estimate, to be checked with the map service in the verification phase."},
           "duration_source": {"$ref": "#/$defs/source", "description": "Where duration_min comes from, once it is checked."},
+          "duration_confirmed_by": {"$ref": "#/$defs/sources", "description": "Other sources that give the same duration."},
           "notes": {"type": "string", "description": "For example a stopover, or a day trip on the way."},
           "booking": {"$ref": "#/$defs/booking"}
         }
@@ -203,16 +204,29 @@
                 "start": {"$ref": "#/$defs/time"},
                 "duration_min": {"type": "integer", "minimum": 0},
                 "notes": {"type": "string"},
+                "verification": {
+                  "description": "Whether this stop works on this day at this time: open, not closed for a holiday, reachable.",
+                  "type": "object",
+                  "required": ["status", "checked_at"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "status": {"enum": ["ok", "warning", "failed"]},
+                    "notes": {"type": "string"},
+                    "checked_at": {"$ref": "#/$defs/date"}
+                  }
+                },
                 "to_next": {
                   "description": "The move from this stop to the next one of the day.",
                   "type": "object",
-                  "required": ["mode", "minutes", "source"],
+                  "required": ["mode", "minutes"],
                   "additionalProperties": false,
                   "properties": {
                     "mode": {"enum": ["walk", "bike", "car", "public_transport", "taxi", "other"]},
                     "minutes": {"type": "integer", "minimum": 0},
                     "distance_km": {"type": "number", "minimum": 0},
-                    "source": {"$ref": "#/$defs/source"}
+                    "estimated": {"type": "boolean", "description": "True when minutes is an estimate, because no service could compute it."},
+                    "source": {"$ref": "#/$defs/source"},
+                    "notes": {"type": "string", "description": "For example the line to take, or a margin for traffic."}
                   }
                 }
               }
@@ -341,6 +355,7 @@
         "checked_at": {"$ref": "#/$defs/date"}
       }
     },
+    "sources": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/source"}},
     "traveller": {
       "type": "object",
       "required": ["id", "label", "age_group"],
@@ -395,7 +410,9 @@
           "additionalProperties": false,
           "properties": {
             "raw": {"type": "string", "description": "Opening hours as given by the source."},
-            "source": {"$ref": "#/$defs/source"}
+            "source": {"$ref": "#/$defs/source"},
+            "confirmed_by": {"$ref": "#/$defs/sources", "description": "Other sources that give the same hours."},
+            "notes": {"type": "string", "description": "For example seasonal hours, last entry, or sources that disagree."}
           }
         },
         "verification": {
@@ -405,7 +422,8 @@
           "properties": {
             "status": {"enum": ["unverified", "ok", "warning", "failed"]},
             "notes": {"type": "string"},
-            "checked_at": {"$ref": "#/$defs/date"}
+            "checked_at": {"$ref": "#/$defs/date"},
+            "sources": {"$ref": "#/$defs/sources", "description": "Where the place was checked."}
           }
         }
       }

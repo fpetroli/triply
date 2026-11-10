@@ -36,10 +36,13 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/triply.py" <command> …
 | `place "<name>" [--country XX] [--language xx]` | Looks a place up by name: the best matches, with region, country and coordinates |
 | `climate --lat <lat> --lon <lon> --from MM-DD --to MM-DD` | Typical weather of that period of the year at that place, averaged over the last years, with its source (`--place "<name>"` instead of the coordinates takes the best match) |
 | `find-place "<query>" ["<query>" …] --provider osm\|mapbox\|google [--near <lat>,<lon>] [--country XX] [--language xx] --data "${CLAUDE_PLUGIN_DATA}"` | Looks points of interest up by name (up to ten per call) with the map service of the trip: name, address, coordinates, category, id at the provider, opening hours when OpenStreetMap has them |
+| `check-place <place id> […] --provider osm\|mapbox\|google --trip "<trip folder>" [--language xx] --data "${CLAUDE_PLUGIN_DATA}"` | Looks the places of the trip up again at the map service (up to 50 per call): found or not, open for business or closed, opening hours, website |
+| `route <place id> <place id> […] --provider osm\|mapbox\|google --mode walk\|bike\|car\|public_transport [--depart <date>T<time>:00<offset>] --trip "<trip folder>" --data "${CLAUDE_PLUGIN_DATA}"` | Travel time and distance between consecutive places (up to 10 per call); public transport only with Google; points can also be `<lat>,<lon>` |
+| `calendar --from YYYY-MM-DD --to YYYY-MM-DD [--country XX]` | The weekday of every date of a period and the public holidays of a country |
 | `keys --data "${CLAUDE_PLUGIN_DATA}"` | Which map service keys are saved, and the file where they live (never the keys themselves) |
 | `set-key mapbox\|google "<key>" --data "${CLAUDE_PLUGIN_DATA}"` | Saves the key of Mapbox or Google, outside the trips folder, readable only by the user |
 | `forget-key mapbox\|google --data "${CLAUDE_PLUGIN_DATA}"` | Removes a saved key |
-| `guide <topic>` | Prints the instructions on a topic: the phases (`setup`, `brief`, `destination`, `entry-requirements`, `route`, `days`) and the rules of the trip file (`trip-file`) |
+| `guide <topic>` | Prints the instructions on a topic: the phases (`setup`, `brief`, `destination`, `entry-requirements`, `route`, `days`, `verification`) and the rules of the trip file (`trip-file`) |
 
 Run **one command per call**, never chained with `;`, `&&` or pipes, and never with the trip data on the command line: the user approves this script once ("don't ask again"), and only a plain call matches that approval.
 
@@ -68,7 +71,7 @@ Read the instructions of a phase only with `guide`, never by opening files of th
 | 3 — entry requirements (`entry_requirements`) | Documents, visas and authorizations, minors, health, driving licence, for every traveller and country, from official sources | `guide entry-requirements` |
 | 4 — route and bases (`route`) | Exact dates, where to sleep, how many nights, moves between bases with indicative times | `guide route` |
 | 5 — the days (`days`) | Overview of the days, then proposals, then details, with the places looked up on the map service | `guide days` |
-| 6 — verification (`verification`) | Places exist and are open; travel times are realistic | not available yet |
+| 6 — verification (`verification`) | Places exist and are open on their day; times between stops and between bases are realistic; the problems are solved with the user | `guide verification` |
 | 7 — bookings and deadlines (`bookings`) | What to book and by when, with prefilled search links | not available yet |
 | 8 — weather and packing (`weather_packing`) | Forecast or climate, packing list | not available yet |
 | 9 — documents (`documents`) | Itinerary with map, deadlines calendar, packing list | not available yet |

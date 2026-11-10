@@ -12,6 +12,9 @@ Usage:
     python3 triply.py place NAME [--country CODE] [--language CODE]
     python3 triply.py climate (--place NAME [--country CODE] | --lat LAT --lon LON) --from MM-DD --to MM-DD [--years N]
     python3 triply.py find-place QUERY [QUERY ...] --provider osm|mapbox|google [--near LAT,LON] [--country CODE] [--language CODE] [--limit N] [--data DIR]
+    python3 triply.py check-place ID [ID ...] --provider osm|mapbox|google [--trip FOLDER] [--language CODE] [--data DIR]
+    python3 triply.py route POINT POINT [POINT ...] --provider osm|mapbox|google --mode walk|bike|car|public_transport [--depart TIME] [--trip FOLDER] [--data DIR]
+    python3 triply.py calendar --from DATE --to DATE [--country CODE]
     python3 triply.py keys --data DIR
     python3 triply.py set-key mapbox|google KEY --data DIR
     python3 triply.py forget-key mapbox|google --data DIR
@@ -60,6 +63,23 @@ find-place
     saved by ``set-key``). Up to ten queries per call. For each one, the best
     matches with address, coordinates, category and the id at the provider.
 
+check-place
+    Looks places up again by their id at the map service: whether they are
+    still there, whether they are open for business (Google, Mapbox), their
+    opening hours and website. With ``--trip``, the ids are those of the places
+    of the trip, and the id at the provider is taken from the trip file.
+
+route
+    Travel time and distance between consecutive points, on foot, by bike, by
+    car or (Google only) by public transport. A point is LAT,LON or, with
+    ``--trip``, the id of a place of the trip. ``--depart`` (RFC 3339, for
+    example 2027-04-12T09:30:00+09:00) is used by Google for public transport
+    and car.
+
+calendar
+    The days of a period with their weekday and, with ``--country``, the public
+    holidays of that country (Nager.Date).
+
 keys, set-key, forget-key
     The keys of Mapbox and Google live in ``--data/keys.json``, readable only
     by the user, outside the trips folder: they never end up in a trip that is
@@ -91,8 +111,10 @@ from typing import Any, Dict, List, Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import calendar_days  # noqa: E402
 import climate  # noqa: E402
 import places  # noqa: E402
+import routes  # noqa: E402
 import validate  # noqa: E402
 
 TRIPLY = ".triply"
@@ -428,6 +450,28 @@ def cmd_forget_key(provider: str, data_dir: Optional[Path]) -> Dict[str, Any]:
     return {"removed": removed, "provider": provider}
 
 
+def _key_for(provider: str, data_dir: Optional[Path]) -> Optional[str]:
+    if provider not in KEY_PROVIDERS:
+        return None
+    key = load_keys(_need_data(data_dir)).get(provider)
+    if not key:
+        raise RefusedError(f"no {provider} key saved: ask the user for it, or use osm", [{"key": "missing", "provider": provider}])
+    return key
+
+
+def _with_key(provider: str, call):
+    try:
+        return call()
+    except places.KeyRefusedError as exc:
+        raise RefusedError(f"{provider}: {exc}", [{"key": "refused", "provider": provider}]) from exc
+
+
+def _trip_places(trip_folder: Optional[Path]) -> Optional[Dict[str, Any]]:
+    if trip_folder is None:
+        return None
+    return read_json(validate.resolve(trip_folder.expanduser())).get("places", {})
+
+
 def cmd_find_place(
     queries: List[str],
     provider: str,
@@ -439,15 +483,78 @@ def cmd_find_place(
 ) -> Dict[str, Any]:
     if not 1 <= len(queries) <= MAX_QUERIES:
         raise RefusedError(f"give from 1 to {MAX_QUERIES} queries per call")
-    key = None
-    if provider in KEY_PROVIDERS:
-        key = load_keys(_need_data(data_dir)).get(provider)
-        if not key:
-            raise RefusedError(f"no {provider} key saved: ask the user for it, or use osm", [{"key": "missing", "provider": provider}])
+    key = _key_for(provider, data_dir)
+    near_point = places.parse_near(near)
+    return _with_key(provider, lambda: places.find(provider, queries, near_point, country, language, max(1, min(limit, 10)), key, today()))
+
+
+def cmd_check_place(
+    ids: List[str], provider: str, trip_folder: Optional[Path], language: str, data_dir: Optional[Path]
+) -> Dict[str, Any]:
+    trip_places = _trip_places(trip_folder)
+    lookup: List[str] = []
+    place_of: Dict[str, str] = {}
+    without_id: List[str] = []
+    for given in ids:
+        if trip_places is None:
+            lookup.append(given)
+            continue
+        if given not in trip_places:
+            raise RefusedError(f"no place '{given}' in the trip")
+        provider_id = (trip_places[given].get("provider_ids") or {}).get(provider)
+        if provider_id:
+            lookup.append(provider_id)
+            place_of[provider_id] = given
+        else:
+            without_id.append(given)
+    result: Dict[str, Any] = {"provider": provider, "places": []}
+    if lookup:
+        key = _key_for(provider, data_dir)
+        result = _with_key(provider, lambda: places.check(provider, lookup, language, key, today()))
+        for entry in result["places"]:
+            if entry["provider_id"] in place_of:
+                entry["place"] = place_of[entry["provider_id"]]
+    if without_id:
+        result["without_id"] = without_id
+    return result
+
+
+def cmd_route(
+    points: List[str],
+    provider: str,
+    mode: str,
+    depart: Optional[str],
+    trip_folder: Optional[Path],
+    data_dir: Optional[Path],
+) -> Dict[str, Any]:
+    trip_places = _trip_places(trip_folder)
+    coordinates = []
+    for point in points:
+        if trip_places is not None and point in trip_places:
+            coordinates.append((trip_places[point]["lat"], trip_places[point]["lon"]))
+        elif "," in point:
+            coordinates.append(routes.parse_point(point))
+        else:
+            raise RefusedError(f"'{point}' is neither LAT,LON nor a place of the trip" + ("" if trip_places is not None else " (give --trip)"))
+    if depart:
+        try:
+            datetime.datetime.fromisoformat(depart.replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise RefusedError(f"--depart must be a date and time with its offset, for example 2027-04-12T09:30:00+09:00: {depart!r}") from exc
+    key = _key_for(provider, data_dir)
     try:
-        return places.find(provider, queries, places.parse_near(near), country, language, max(1, min(limit, 10)), key, today())
-    except places.KeyRefusedError as exc:
-        raise RefusedError(f"{provider}: {exc}", [{"key": "refused", "provider": provider}]) from exc
+        result = _with_key(provider, lambda: routes.route(provider, mode, coordinates, key, depart, today()))
+    except routes.UnsupportedError as exc:
+        raise RefusedError(str(exc), [{"mode": "unsupported", "provider": provider}]) from exc
+    except routes.NoRouteError as exc:
+        raise RefusedError(str(exc), [{"route": "none"}]) from exc
+    for leg in result["legs"]:
+        leg["from"], leg["to"] = points[leg["from"]], points[leg["to"]]
+    return result
+
+
+def cmd_calendar(start: str, end: str, country: Optional[str]) -> Dict[str, Any]:
+    return calendar_days.calendar(country, start, end, today())
 
 
 def guide_topics() -> List[str]:
@@ -470,7 +577,7 @@ class RefusedError(Exception):
 
 
 def main(argv: Optional[List[str]] = None) -> int:
-    parser = argparse.ArgumentParser(description="triply: trips folder, trip files, places, climate and map service keys.")
+    parser = argparse.ArgumentParser(description="triply: trips folder, trip files, places, routes, calendar, climate and map service keys.")
     commands = parser.add_subparsers(dest="command", required=True)
 
     locate = commands.add_parser("locate", help="find the trips folder and the current trip")
@@ -517,6 +624,26 @@ def main(argv: Optional[List[str]] = None) -> int:
     find.add_argument("--limit", type=int, default=3, help="matches per query (default: 3)")
     find.add_argument("--data", type=Path, help="folder where the plugin keeps its own data")
 
+    check_place = commands.add_parser("check-place", help="look places up again by their id at the map service")
+    check_place.add_argument("ids", nargs="+", help="ids at the provider, or ids of places of the trip with --trip")
+    check_place.add_argument("--provider", choices=places.PROVIDERS, required=True)
+    check_place.add_argument("--trip", type=Path, help="trip folder: the ids are those of its places")
+    check_place.add_argument("--language", default="en", help="language of the names and hours (default: en)")
+    check_place.add_argument("--data", type=Path, help="folder where the plugin keeps its own data")
+
+    route = commands.add_parser("route", help="travel times between consecutive points")
+    route.add_argument("points", nargs="+", help="LAT,LON, or ids of places of the trip with --trip")
+    route.add_argument("--provider", choices=routes.PROVIDERS, required=True)
+    route.add_argument("--mode", choices=routes.MODES, required=True)
+    route.add_argument("--depart", help="departure, RFC 3339 with offset (Google: public transport and car)")
+    route.add_argument("--trip", type=Path, help="trip folder, to give points as ids of its places")
+    route.add_argument("--data", type=Path, help="folder where the plugin keeps its own data")
+
+    days = commands.add_parser("calendar", help="weekdays and public holidays of a period")
+    days.add_argument("--from", dest="start", required=True, help="first day, YYYY-MM-DD")
+    days.add_argument("--to", dest="end", required=True, help="last day, YYYY-MM-DD")
+    days.add_argument("--country", help="two-letter country code, for its public holidays")
+
     keys = commands.add_parser("keys", help="which map service keys are saved, and where")
     keys.add_argument("--data", type=Path, required=True)
     set_key = commands.add_parser("set-key", help="save the key of a map service")
@@ -557,6 +684,15 @@ def main(argv: Optional[List[str]] = None) -> int:
             code = 0
         elif args.command == "find-place":
             result = cmd_find_place(args.queries, args.provider, args.near, args.country, args.language, args.limit, args.data)
+            code = 0
+        elif args.command == "check-place":
+            result = cmd_check_place(args.ids, args.provider, args.trip, args.language, args.data)
+            code = 0
+        elif args.command == "route":
+            result = cmd_route(args.points, args.provider, args.mode, args.depart, args.trip, args.data)
+            code = 0
+        elif args.command == "calendar":
+            result = cmd_calendar(args.start, args.end, args.country)
             code = 0
         elif args.command == "keys":
             result = cmd_keys(args.data)

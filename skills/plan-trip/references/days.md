@@ -15,7 +15,7 @@ Places are looked up with the map service of the trip (`trip.map_provider`): `os
 - With `osm` nothing is needed.
 - With `mapbox` or `google`, run `keys`. When the key is missing, ask for it, in one short message:
   - **Mapbox**: a free account on mapbox.com; on the Tokens page, the *Default public token*, which starts with `pk.`. Never a secret token (`sk.`).
-  - **Google**: a project on the Google Cloud console with *Places API (New)* enabled (a credit card is needed to activate it; there is a free monthly quota); then an API key, best **restricted to Places API (New) and Routes API**.
+  - **Google**: a project on the Google Cloud console with *Places API (New)* and *Routes API* enabled (the second is used by the verification; a credit card is needed to activate it; there is a free monthly quota); then an API key, best **restricted to Places API (New) and Routes API**.
   - Ask the user to paste it in the chat. Save it with `set-key`; never repeat it in your messages and never write it anywhere else (not in the trip file, not in the profile, not in notes).
   - If the user has doubts about pasting the key in the chat, run `keys` and explain how to write it themselves: open the file shown in `file` with a text editor (create it if it does not exist) and write `{"mapbox": "pk...."}` or `{"google": "AIza..."}`; then tell you when it is done, and run `keys` to check.
   - If the user prefers not to give a key now, offer to use OpenStreetMap for this trip: with their yes set `trip.map_provider` to `osm`, write the choice in the log, and go on.
@@ -73,4 +73,4 @@ When the user agrees:
 
 ## 4. Close the phase
 
-Tell the user, in a few lines: the days at a glance, what still needs a booking, and the next step: the verification of places, opening hours and times with the map service.
+Tell the user, in a few lines: the days at a glance, what still needs a booking, and the next step: the verification of places, opening hours and times with the map service. Then propose to go on with phase 6: `guide verification`.

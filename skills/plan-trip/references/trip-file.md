@@ -7,7 +7,7 @@ Use only the fields shown in these instructions and in the examples of the phase
 
 ## How to change them
 
-- Change the file directly: small edits for small changes, never a rewrite from memory of a large file.
+- Change the file directly, with your file editing tools: small edits for small changes, never a rewrite from memory of a large file, and never scripts or commands of your own to change it (each one would ask the user for a permission).
 - After **every** change run `check`. Errors make the file unusable: fix them at once, never leave a file with errors. Warnings are things to review: tell the user about those that matter to them.
 - Write only inside `.triply/`. The files of the user in the trips folder and in the trip folders are never changed, moved or deleted.
 
@@ -23,7 +23,9 @@ Use only the fields shown in these instructions and in the examples of the phase
 - **costs**: only what the user says; never invent prices.
 - **data from outside** (opening hours, travel times, requirements, weather): always with its `source` (service, link, date of consultation).
 - **entry requirements**: `kind` is `document`, `visa`, `transit`, `minors`, `health`, `driving` or `other`; `status` is `ok`, `action_needed` or `unknown`; a `source` is required unless the status is `unknown`.
-- **travel times**: a `duration_min` estimated by you has `"duration_estimated": true`; once checked with the map service it has `duration_source` instead.
+- **travel times**: a `duration_min` estimated by you has `"duration_estimated": true`; once checked it has `duration_source` instead, and `duration_confirmed_by` for the other sources that agree. A move between two stops of a day (`to_next`) has its `source`, or `"estimated": true` when no service could compute it.
+- **facts checked on the web** (opening hours, timetables): the official source in `source`, the other sources that agree in `confirmed_by`; when they disagree, say it in `notes` and mark the place `warning`.
+- **verification**: on a place, whether it exists and is open for business (`ok`, `warning`, `failed`, with `sources`); on a stop of a day, whether it works on that day at that time.
 - **keys** of Mapbox and Google: only through `set-key`; never in the trip file, the profile or any other file of the trips folder.
 
 ## The progress section

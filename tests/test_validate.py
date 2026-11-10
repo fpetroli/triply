@@ -272,6 +272,79 @@ class TripTest(unittest.TestCase):
         self.trip["trip"]["updated"] = "2027-02-01"
         self.assertIssue("error", "/trip/updated", "earlier than the creation date")
 
+    # ------------------------------------------------------- verification
+
+    def test_not_enough_time_between_stops(self):
+        self.trip["days"][0]["items"][0]["to_next"]["minutes"] = 40  # 15:00 + 60 + 40 > 16:30
+        self.assertIssue("warning", "/days/0/items/1/start", "10 minutes missing")
+
+    def test_enough_time_between_stops(self):
+        self.assertNotIn("minutes missing", " ".join(messages(self.check())))
+
+    def test_overlapping_stops_without_a_move(self):
+        day = self.trip["days"][0]
+        del day["items"][0]["to_next"]
+        day["items"][0]["duration_min"] = 120
+        self.assertIssue("warning", "/days/0/items/1/start", "30 minutes missing")
+
+    def test_move_without_source(self):
+        del self.trip["days"][0]["items"][0]["to_next"]["source"]
+        self.assertIssue("error", "/days/0/items/0/to_next", "needs its source")
+
+    def test_estimated_move_without_source(self):
+        move = self.trip["days"][0]["items"][0]["to_next"]
+        del move["source"]
+        move["estimated"] = True
+        self.assertTrue(self.check().ok)
+
+    def test_move_after_the_last_stop(self):
+        self.trip["days"][1]["items"][0]["to_next"] = {"mode": "walk", "minutes": 5, "estimated": True}
+        self.assertIssue("warning", "/days/1/items/0/to_next", "last stop")
+
+    def test_stop_that_does_not_work_that_day(self):
+        self.trip["days"][1]["items"][0]["verification"] = {"status": "failed", "notes": "closed on Mondays", "checked_at": "2027-03-10"}
+        self.assertIssue("warning", "/days/1/items/0/verification", "closed on Mondays")
+
+    def test_place_to_review(self):
+        self.trip["places"]["uffizi"]["verification"] = {"status": "warning", "notes": "sources disagree", "checked_at": "2027-03-10"}
+        self.assertIssue("warning", "/days/1/items/0/place", "to review: sources disagree")
+
+    def test_after_verification_everything_is_checked(self):
+        self.trip["progress"]["phase"] = "bookings"
+        self.assertIssue("warning", "/days/0/items/1/place", "has not been verified")
+        self.assertNotIn("/days/1/items/0/place", " ".join(messages(self.check())))  # the Uffizi are verified
+        self.assertIssue("warning", "/transports/1/duration_min", "still an estimate")
+
+    def test_flight_stays_an_estimate_until_booked(self):
+        self.trip["progress"]["phase"] = "bookings"
+        self.trip["transports"][1]["mode"] = "flight"
+        self.assertNotIn("still an estimate", " ".join(messages(self.check())))
+
+    def test_during_verification_nothing_is_required_yet(self):
+        text = " ".join(messages(self.check()))
+        self.assertNotIn("has not been verified", text)
+        self.assertNotIn("still an estimate", text)
+
+    def test_move_without_time_after_verification(self):
+        self.trip["progress"]["phase"] = "bookings"
+        del self.trip["days"][0]["items"][0]["to_next"]
+        self.assertIssue("warning", "/days/0/items/0/to_next", "has no time")
+
+    def test_estimate_with_a_source(self):
+        self.trip["transports"][1]["duration_source"] = {"provider": "web", "checked_at": "2027-03-10"}
+        self.assertIssue("warning", "/transports/1/duration_estimated", "still marked as an estimate")
+
+    def test_cross_checked_sources_are_valid(self):
+        place = self.trip["places"]["uffizi"]
+        web = {"provider": "web", "url": "https://www.uffizi.it/", "checked_at": "2027-03-10"}
+        place["opening_hours"] = {"raw": "Tu-Su 08:15-18:30", "source": web, "confirmed_by": [{"provider": "osm", "checked_at": "2027-03-10"}]}
+        place["verification"] = {"status": "ok", "checked_at": "2027-03-10", "sources": [web]}
+        move = self.trip["transports"][1]
+        del move["duration_estimated"]
+        move["duration_source"] = web
+        move["duration_confirmed_by"] = [web]
+        self.assertTrue(self.check().ok, messages(self.check()))
+
 
 class ProfileTest(unittest.TestCase):
     def test_valid_profile(self):
