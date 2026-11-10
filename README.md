@@ -2,7 +2,7 @@
 
 A plugin for Claude that helps you plan and organize your vacations.
 
-> **Status:** early development. triply can set up your trips folder, collect the brief of a new trip, help you choose the destination, check the entry requirements of every traveller on official sources and plan the route with its bases and the days, and check them: places open on their day, realistic travel times; the next phases (bookings, weather and packing, documents) are coming.
+> **Status:** early development. triply can set up your trips folder, collect the brief of a new trip, help you choose the destination, check the entry requirements of every traveller on official sources and plan the route with its bases and the days, check them (places open on their day, realistic travel times) and list what to book and by when, keeping track of what you booked and spent; the next phases (weather and packing, documents) are coming.
 
 ## What it will do
 
@@ -41,6 +41,8 @@ With Mapbox or Google, triply asks for the key the first time it looks places up
 
 To check the days, triply asks the map service for the travel times and looks the places up again. With OpenStreetMap, routes come from the public routing servers of [FOSSGIS](https://routing.openstreetmap.de/) (on foot, by bike, by car; car times have no traffic); public transport is computed only by Google. With Google, checking opening hours uses the "Enterprise" tier of Place Details, which has a smaller free monthly quota (1,000 places at the time of writing): enough for a trip, but keep an eye on it in the Google Cloud console. Public holidays come from [Nager.Date](https://nagerholidays.com/).
 
+For what to book, triply prepares links that open Booking.com, Airbnb, Google Flights, Skyscanner and Rome2rio with places, dates and travellers already filled in, next to the official sites. triply never queries these sites, never sees prices and never books; the links carry no affiliate code. These sites do not document their link format: if one changes, the link still opens the site, perhaps without the data filled in.
+
 With OpenStreetMap, place and route data is © OpenStreetMap contributors ([fix the map](https://www.openstreetmap.org/fixthemap)).
 
 ## Your trips folder
@@ -77,11 +79,12 @@ To check opening hours and timetables, Claude reads the official site of the pla
 - `schemas/trip.schema.json` — the trip file (`.triply/trip.json`);
 - `schemas/profile.schema.json` — the user profile, valid for every trip (`.triply/profile.json` in the trips folder);
 - `skills/plan-trip/` — the planning skill: `SKILL.md` and the instructions of each phase in `references/`;
-- `scripts/triply.py` — the single entry point the skill uses: find and create the trips folder, create and rename a trip, check a file, look a place up, get the climate of a period, look points of interest up and check them again, compute travel times, give weekdays and public holidays, keep the map service keys, print the instructions of a phase;
+- `scripts/triply.py` — the single entry point the skill uses: find and create the trips folder, create and rename a trip, check a file, look a place up, get the climate of a period, look points of interest up and check them again, compute travel times, give weekdays and public holidays, prepare the search links, total the costs, keep the map service keys, print the instructions of a phase;
 - `scripts/climate.py` — places and climate from [Open-Meteo](https://open-meteo.com/) (geocoding and historical weather);
 - `scripts/places.py` — points of interest by name with OpenStreetMap (Nominatim), Mapbox (Search Box) or Google (Places API, New), and their check by id;
 - `scripts/routes.py` — travel times with OpenStreetMap (OSRM servers of FOSSGIS), Mapbox (Directions) or Google (Routes API);
 - `scripts/calendar_days.py` — weekdays and public holidays (Nager.Date);
+- `scripts/bookings.py` — search links already filled in, and the costs of a trip;
 - `scripts/validate.py` — checks a trip file or a profile against its schema and against the coherence rules (references, dates, planning rules):
 
   ```

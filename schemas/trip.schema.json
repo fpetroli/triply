@@ -204,6 +204,7 @@
                 "start": {"$ref": "#/$defs/time"},
                 "duration_min": {"type": "integer", "minimum": 0},
                 "notes": {"type": "string"},
+                "booking": {"$ref": "#/$defs/booking", "description": "For a stop that needs a ticket or a table booked in advance."},
                 "verification": {
                   "description": "Whether this stop works on this day at this time: open, not closed for a holiday, reachable.",
                   "type": "object",
@@ -245,8 +246,9 @@
           "id": {"$ref": "#/$defs/id"},
           "title": {"type": "string", "minLength": 1},
           "due": {"$ref": "#/$defs/date"},
-          "kind": {"enum": ["booking", "document", "payment", "other"]},
+          "kind": {"enum": ["booking", "document", "payment", "cancellation", "other"]},
           "reason": {"type": "string"},
+          "source": {"$ref": "#/$defs/source", "description": "Where the date comes from, when it is read on the web (for example when ticket sales open)."},
           "related": {"$ref": "#/$defs/id", "description": "Id of the stay, transport, place or traveller it concerns."},
           "search_url": {"$ref": "#/$defs/url"},
           "done": {"type": "boolean"}
@@ -395,6 +397,7 @@
         "lon": {"type": "number", "minimum": -180, "maximum": 180},
         "address": {"type": "string"},
         "country": {"$ref": "#/$defs/country"},
+        "iata": {"type": "string", "pattern": "^[A-Z]{3}$", "description": "IATA code of the airport or of the city, for the flight search links."},
         "provider_ids": {
           "type": "object",
           "additionalProperties": false,
@@ -445,7 +448,21 @@
           }
         },
         "reference": {"type": "string", "description": "Booking reference, as given by the user."},
-        "search_url": {"$ref": "#/$defs/url"}
+        "search_url": {"$ref": "#/$defs/url"},
+        "links": {
+          "description": "Where to book: search links made by triply (generated) and official sites.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["label", "url"],
+            "additionalProperties": false,
+            "properties": {
+              "label": {"type": "string", "minLength": 1},
+              "url": {"$ref": "#/$defs/url"},
+              "generated": {"type": "boolean", "description": "True for the links made by triply, which it replaces when the trip changes."}
+            }
+          }
+        }
       }
     }
   }

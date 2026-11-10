@@ -28,4 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `check-place`: places looked up again by id with OpenStreetMap (Nominatim lookup), Mapbox (Search Box retrieve) or Google (Place Details, with opening hours).
 - `route`: travel times with OpenStreetMap (OSRM servers of FOSSGIS), Mapbox (Directions) or Google (Routes API, also public transport).
 - `calendar`: weekdays and public holidays of a period (Nager.Date).
+- Phase 7 of the planning flow, bookings and deadlines: what to book and by when, with search links already filled in and official sites; then, at any time, what the user has booked and spent.
+- `links`: search links for stays (Booking.com, Airbnb), flights (Google Flights, Skyscanner) and trains, buses and ferries (Rome2rio), with no affiliate code.
+- `costs`: totals of the costs per currency and what is left of the budget.
+- Trip file: `booking.links`, `booking` on the stops of the days, `iata` on places, `source` on deadlines and the deadline kind `cancellation`. The check warns about overdue deadlines, deadlines of things already booked, things still to book with no deadline after this phase, and a budget exceeded.
 - Trip file: `verification` of each stop of a day, `confirmed_by` and `notes` on opening hours, `sources` on the verification of a place, `duration_confirmed_by` on transports, `estimated` and `notes` on the moves between stops. The check warns when there is not enough time between two stops, about stops and places to review, and, after the verification, about what is still unchecked.

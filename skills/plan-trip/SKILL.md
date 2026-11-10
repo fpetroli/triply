@@ -39,10 +39,12 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/triply.py" <command> …
 | `check-place <place id> […] --provider osm\|mapbox\|google --trip "<trip folder>" [--language xx] --data "${CLAUDE_PLUGIN_DATA}"` | Looks the places of the trip up again at the map service (up to 50 per call): found or not, open for business or closed, opening hours, website |
 | `route <place id> <place id> […] --provider osm\|mapbox\|google --mode walk\|bike\|car\|public_transport [--depart <date>T<time>:00<offset>] --trip "<trip folder>" --data "${CLAUDE_PLUGIN_DATA}"` | Travel time and distance between consecutive places (up to 10 per call); public transport only with Google; points can also be `<lat>,<lon>` |
 | `calendar --from YYYY-MM-DD --to YYYY-MM-DD [--country XX]` | The weekday of every date of a period and the public holidays of a country |
+| `links "<trip folder>"` | Adds to every stay and transport still to book the search links already filled in (Booking.com, Airbnb, Google Flights, Skyscanner, Rome2rio), keeping the links added by hand, and saves the trip file |
+| `costs "<trip folder>"` | Totals of the costs entered by the user, per currency, and what is left of the budget |
 | `keys --data "${CLAUDE_PLUGIN_DATA}"` | Which map service keys are saved, and the file where they live (never the keys themselves) |
 | `set-key mapbox\|google "<key>" --data "${CLAUDE_PLUGIN_DATA}"` | Saves the key of Mapbox or Google, outside the trips folder, readable only by the user |
 | `forget-key mapbox\|google --data "${CLAUDE_PLUGIN_DATA}"` | Removes a saved key |
-| `guide <topic>` | Prints the instructions on a topic: the phases (`setup`, `brief`, `destination`, `entry-requirements`, `route`, `days`, `verification`) and the rules of the trip file (`trip-file`) |
+| `guide <topic>` | Prints the instructions on a topic: the phases (`setup`, `brief`, `destination`, `entry-requirements`, `route`, `days`, `verification`, `bookings`) and the rules of the trip file (`trip-file`) |
 
 Run **one command per call**, never chained with `;`, `&&` or pipes, and never with the trip data on the command line: the user approves this script once ("don't ask again"), and only a plain call matches that approval.
 
@@ -59,7 +61,8 @@ Read the instructions of a phase only with `guide`, never by opening files of th
    - **the user wants a new trip** → phase 1: run `guide brief`;
    - **otherwise** → show the trips in a short list (title, where it stands, next step) and ask which one to continue, or whether to start a new one.
 3. When the trips folder is outside the current folder (`found_by` is `remembered`), every change to its files may ask the user for a permission. Mention once, in one line, that opening Claude directly in the trips folder avoids these requests.
-4. To **resume** a trip, read its `.triply/trip.json`, then tell the user in two or three lines where the trip stands (phase reached, last choices, open points, next step) and propose to continue from the next step. When an entry requirement was checked more than three months ago and the trip is still to come, say so and propose to check it again (`guide entry-requirements`).
+4. To **resume** a trip, read its `.triply/trip.json`, then tell the user in two or three lines where the trip stands (phase reached, last choices, open points, next step) and propose to continue from the next step. When an entry requirement was checked more than three months ago and the trip is still to come, say so and propose to check it again (`guide entry-requirements`). When a deadline is overdue or due within a week, say so first.
+5. When the user says they have **booked or paid** something, in any phase, record it as `guide bookings` says (section 5), then go back to where you were.
 
 ## The phases
 
@@ -72,7 +75,7 @@ Read the instructions of a phase only with `guide`, never by opening files of th
 | 4 — route and bases (`route`) | Exact dates, where to sleep, how many nights, moves between bases with indicative times | `guide route` |
 | 5 — the days (`days`) | Overview of the days, then proposals, then details, with the places looked up on the map service | `guide days` |
 | 6 — verification (`verification`) | Places exist and are open on their day; times between stops and between bases are realistic; the problems are solved with the user | `guide verification` |
-| 7 — bookings and deadlines (`bookings`) | What to book and by when, with prefilled search links | not available yet |
+| 7 — bookings and deadlines (`bookings`) | What to book and by when, with search links already filled in; then, at any time, what the user has booked and spent | `guide bookings` |
 | 8 — weather and packing (`weather_packing`) | Forecast or climate, packing list | not available yet |
 | 9 — documents (`documents`) | Itinerary with map, deadlines calendar, packing list | not available yet |
 

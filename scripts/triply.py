@@ -15,6 +15,8 @@ Usage:
     python3 triply.py check-place ID [ID ...] --provider osm|mapbox|google [--trip FOLDER] [--language CODE] [--data DIR]
     python3 triply.py route POINT POINT [POINT ...] --provider osm|mapbox|google --mode walk|bike|car|public_transport [--depart TIME] [--trip FOLDER] [--data DIR]
     python3 triply.py calendar --from DATE --to DATE [--country CODE]
+    python3 triply.py links TRIP_FOLDER
+    python3 triply.py costs TRIP_FOLDER
     python3 triply.py keys --data DIR
     python3 triply.py set-key mapbox|google KEY --data DIR
     python3 triply.py forget-key mapbox|google --data DIR
@@ -80,6 +82,16 @@ calendar
     The days of a period with their weekday and, with ``--country``, the public
     holidays of that country (Nager.Date).
 
+links
+    Adds to every stay and transport still to book the search links already
+    filled in (Booking.com and Airbnb; Google Flights and Skyscanner; Rome2rio),
+    and saves the trip file. Links added by hand, such as official sites, are
+    kept. triply never queries these sites.
+
+costs
+    Totals of the costs entered by the user, per currency: booked, other
+    confirmed, estimated; and what is left of the budget.
+
 keys, set-key, forget-key
     The keys of Mapbox and Google live in ``--data/keys.json``, readable only
     by the user, outside the trips folder: they never end up in a trip that is
@@ -111,6 +123,7 @@ from typing import Any, Dict, List, Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import bookings  # noqa: E402
 import calendar_days  # noqa: E402
 import climate  # noqa: E402
 import places  # noqa: E402
@@ -553,6 +566,31 @@ def cmd_route(
     return result
 
 
+def _trip_file(trip_folder: Path) -> Path:
+    path = validate.resolve(trip_folder.expanduser())
+    if path.name != TRIP_FILE:
+        raise RefusedError(f"{trip_folder} is not a trip folder")
+    return path
+
+
+def cmd_links(trip_folder: Path) -> Dict[str, Any]:
+    path = _trip_file(trip_folder)
+    data = read_json(path)
+    if not validate.check_trip(data).ok:
+        raise RefusedError("the trip file has errors: run check and fix them first")
+    done = bookings.fill_links(data)
+    data["trip"]["updated"] = today()
+    write_json(path, data)
+    return {"trip_file": str(path), "done": done}
+
+
+def cmd_costs(trip_folder: Path) -> Dict[str, Any]:
+    data = read_json(_trip_file(trip_folder))
+    if not validate.check_trip(data).ok:
+        raise RefusedError("the trip file has errors: run check and fix them first")
+    return bookings.costs(data)
+
+
 def cmd_calendar(start: str, end: str, country: Optional[str]) -> Dict[str, Any]:
     return calendar_days.calendar(country, start, end, today())
 
@@ -577,7 +615,7 @@ class RefusedError(Exception):
 
 
 def main(argv: Optional[List[str]] = None) -> int:
-    parser = argparse.ArgumentParser(description="triply: trips folder, trip files, places, routes, calendar, climate and map service keys.")
+    parser = argparse.ArgumentParser(description="triply: trips folder, trip files, places, routes, calendar, climate, bookings and map service keys.")
     commands = parser.add_subparsers(dest="command", required=True)
 
     locate = commands.add_parser("locate", help="find the trips folder and the current trip")
@@ -644,6 +682,11 @@ def main(argv: Optional[List[str]] = None) -> int:
     days.add_argument("--to", dest="end", required=True, help="last day, YYYY-MM-DD")
     days.add_argument("--country", help="two-letter country code, for its public holidays")
 
+    links = commands.add_parser("links", help="add the search links to what is still to book")
+    links.add_argument("trip_folder", type=Path)
+    costs = commands.add_parser("costs", help="totals of the costs and what is left of the budget")
+    costs.add_argument("trip_folder", type=Path)
+
     keys = commands.add_parser("keys", help="which map service keys are saved, and where")
     keys.add_argument("--data", type=Path, required=True)
     set_key = commands.add_parser("set-key", help="save the key of a map service")
@@ -693,6 +736,12 @@ def main(argv: Optional[List[str]] = None) -> int:
             code = 0
         elif args.command == "calendar":
             result = cmd_calendar(args.start, args.end, args.country)
+            code = 0
+        elif args.command == "links":
+            result = cmd_links(args.trip_folder)
+            code = 0
+        elif args.command == "costs":
+            result = cmd_costs(args.trip_folder)
             code = 0
         elif args.command == "keys":
             result = cmd_keys(args.data)

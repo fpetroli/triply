@@ -94,4 +94,4 @@ When the user agrees:
 - `progress.phase` → `bookings`; `next_step`;
 - run `check` and fix every warning about what is not verified yet.
 
-Tell the user, in a few lines: what was checked, what changed, what remains uncertain, and the next step: what to book and by when.
+Tell the user, in a few lines: what was checked, what changed, what remains uncertain, and the next step: what to book and by when. Then propose to go on with phase 7: `guide bookings`.

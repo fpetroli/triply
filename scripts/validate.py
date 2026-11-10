@@ -32,6 +32,7 @@ from typing import Any, Dict, Iterable, List, Optional, Set
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import bookings  # noqa: E402
 import schema_check  # noqa: E402
 
 SCHEMAS = Path(__file__).resolve().parent.parent / "schemas"
@@ -101,7 +102,8 @@ def check_trip(data: Any, today: Optional[datetime.date] = None) -> Report:
     _stays_and_transports(data, report)
     _options(data, report)
     _documents(data, report)
-    _deadlines(data, report)
+    _deadlines(data, report, today or datetime.date.today())
+    _bookings(data, report)
     _requirements(data, report, today or datetime.date.today())
     _weather(data, report)
     return report
@@ -346,13 +348,45 @@ def _documents(data: Dict[str, Any], report: Report) -> None:
                 )
 
 
-def _deadlines(data: Dict[str, Any], report: Report) -> None:
-    start, _ = _trip_range(data)
-    if not start:
-        return
+def _deadlines(data: Dict[str, Any], report: Report, today: datetime.date) -> None:
+    start, end = _trip_range(data)
+    booked = {ref for ref, booking in _booking_refs(data) if booking["status"] != "to_book"}
     for i, deadline in enumerate(data.get("deadlines", [])):
-        if not deadline["done"] and _date(deadline["due"]) > start:
+        if deadline["done"]:
+            continue
+        due = _date(deadline["due"])
+        if start and due > start and deadline["kind"] != "cancellation":
             report.warning(f"/deadlines/{i}/due", "falls after the start of the trip")
+        if due < today and (end is None or end >= today):
+            report.warning(f"/deadlines/{i}/due", f"overdue: {deadline['title']}")
+        if deadline["kind"] == "booking" and deadline.get("related") in booked:
+            report.warning(f"/deadlines/{i}/done", f"'{deadline['related']}' is already booked: mark the deadline as done")
+
+
+def _booking_refs(data: Dict[str, Any]):
+    """(id, booking) of stays, transports and stops of the days; a stop is known by its place."""
+    for stay in data.get("stays", []):
+        yield stay["id"], stay["booking"]
+    for move in data.get("transports", []):
+        yield move["id"], move["booking"]
+    for day in data["days"]:
+        for item in day["items"]:
+            if "booking" in item:
+                yield item["place"], item["booking"]
+
+
+def _bookings(data: Dict[str, Any], report: Report) -> None:
+    if PHASES.index(data["progress"]["phase"]) > PHASES.index("bookings"):
+        planned = {d.get("related") for d in data.get("deadlines", []) if d["kind"] == "booking"}
+        for ref, booking in _booking_refs(data):
+            if booking["status"] == "to_book" and ref not in planned:
+                report.warning("/deadlines", f"'{ref}' is still to book and has no booking deadline")
+    budget = bookings.costs(data).get("budget")
+    if budget and budget["left"] < 0:
+        report.warning(
+            "/constraints/budget",
+            f"over budget: {budget['committed']} {budget['currency']} committed, {budget['amount']} planned",
+        )
 
 
 def _requirements(data: Dict[str, Any], report: Report, today: datetime.date) -> None:

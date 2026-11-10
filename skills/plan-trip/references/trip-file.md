@@ -20,7 +20,9 @@ Use only the fields shown in these instructions and in the examples of the phase
 - **people**: `age_group` is `infant`, `child`, `teen`, `adult` or `senior`; **pace** is `relaxed`, `moderate` or `intense`.
 - **means of transport**: `flight`, `train`, `ferry`, `bus`, `car`, `car_rental`, `other`.
 - **documents**: `type` (`passport`, `id_card`, `visa`, `driving_licence`, `other`), `country`, `expires`. Never a number.
-- **costs**: only what the user says; never invent prices.
+- **costs**: only what the user says; never invent prices. The cost of a booking goes in its `booking.cost`; `budget` holds only the costs with no booking (insurance, passes), so that nothing is counted twice.
+- **bookings**: `booking.links` holds where to book: the links made by `links` (`"generated": true`, replaced when the trip changes) and the official sites you add. Never card numbers or passwords.
+- **deadlines**: `kind` is `booking`, `document`, `payment`, `cancellation` (last day to cancel for free) or `other`; `related` is the id of the stay, transport, place or traveller; `source` when the date comes from the web.
 - **data from outside** (opening hours, travel times, requirements, weather): always with its `source` (service, link, date of consultation).
 - **entry requirements**: `kind` is `document`, `visa`, `transit`, `minors`, `health`, `driving` or `other`; `status` is `ok`, `action_needed` or `unknown`; a `source` is required unless the status is `unknown`.
 - **travel times**: a `duration_min` estimated by you has `"duration_estimated": true`; once checked it has `duration_source` instead, and `duration_confirmed_by` for the other sources that agree. A move between two stops of a day (`to_next`) has its `source`, or `"estimated": true` when no service could compute it.
