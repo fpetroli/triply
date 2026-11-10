@@ -2,7 +2,7 @@
 
 A plugin for Claude that helps you plan and organize your vacations.
 
-> **Status:** early development. triply can set up your trips folder, collect the brief of a new trip, help you choose the destination, check the entry requirements of every traveller on official sources and plan the route with its bases and the days, check them (places open on their day, realistic travel times) and list what to book and by when, keeping track of what you booked and spent; the next phases (weather and packing, documents) are coming.
+> **Status:** early development. triply can set up your trips folder, collect the brief of a new trip, help you choose the destination, check the entry requirements of every traveller on official sources and plan the route with its bases and the days, check them (places open on their day, realistic travel times) list what to book and by when, keeping track of what you booked and spent, and prepare the weather and the packing list; the last phase (documents) is coming.
 
 ## What it will do
 
@@ -33,7 +33,7 @@ You choose the map service:
 - **Mapbox** — free account and token;
 - **Google Maps Platform** — free monthly quota; activating a project requires a credit card.
 
-Weather comes from [Open-Meteo](https://open-meteo.com/) (free for non-commercial use).
+Weather comes from [Open-Meteo](https://open-meteo.com/) (free for non-commercial use): the average of the last years, then the forecast in the last 15 days before departure.
 
 triply never requires a paid service.
 
@@ -79,8 +79,8 @@ To check opening hours and timetables, Claude reads the official site of the pla
 - `schemas/trip.schema.json` — the trip file (`.triply/trip.json`);
 - `schemas/profile.schema.json` — the user profile, valid for every trip (`.triply/profile.json` in the trips folder);
 - `skills/plan-trip/` — the planning skill: `SKILL.md` and the instructions of each phase in `references/`;
-- `scripts/triply.py` — the single entry point the skill uses: find and create the trips folder, create and rename a trip, check a file, look a place up, get the climate of a period, look points of interest up and check them again, compute travel times, give weekdays and public holidays, prepare the search links, total the costs, keep the map service keys, print the instructions of a phase;
-- `scripts/climate.py` — places and climate from [Open-Meteo](https://open-meteo.com/) (geocoding and historical weather);
+- `scripts/triply.py` — the single entry point the skill uses: find and create the trips folder, create and rename a trip, check a file, look a place up, get the climate of a period, look points of interest up and check them again, compute travel times, give weekdays and public holidays, give the forecast, prepare the search links, total the costs, keep the map service keys, print the instructions of a phase;
+- `scripts/climate.py` — places, climate and forecast from [Open-Meteo](https://open-meteo.com/) (geocoding, historical weather, forecast);
 - `scripts/places.py` — points of interest by name with OpenStreetMap (Nominatim), Mapbox (Search Box) or Google (Places API, New), and their check by id;
 - `scripts/routes.py` — travel times with OpenStreetMap (OSRM servers of FOSSGIS), Mapbox (Directions) or Google (Routes API);
 - `scripts/calendar_days.py` — weekdays and public holidays (Nager.Date);

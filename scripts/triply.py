@@ -11,6 +11,7 @@ Usage:
     python3 triply.py check PATH
     python3 triply.py place NAME [--country CODE] [--language CODE]
     python3 triply.py climate (--place NAME [--country CODE] | --lat LAT --lon LON) --from MM-DD --to MM-DD [--years N]
+    python3 triply.py forecast (--place NAME [--country CODE] | --lat LAT --lon LON) --from DATE --to DATE
     python3 triply.py find-place QUERY [QUERY ...] --provider osm|mapbox|google [--near LAT,LON] [--country CODE] [--language CODE] [--limit N] [--data DIR]
     python3 triply.py check-place ID [ID ...] --provider osm|mapbox|google [--trip FOLDER] [--language CODE] [--data DIR]
     python3 triply.py route POINT POINT [POINT ...] --provider osm|mapbox|google --mode walk|bike|car|public_transport [--depart TIME] [--trip FOLDER] [--data DIR]
@@ -58,6 +59,11 @@ place
 climate
     The typical weather of a period of the year at a place, averaged over the
     last years (Open-Meteo historical weather), with its source.
+
+forecast
+    The forecast of each day of a period at a place (Open-Meteo), up to 15
+    days from today; a period that goes further is cut, and the answer says
+    until when the forecast is available.
 
 find-place
     Looks points of interest up by name (a temple, a museum, a beach) with a
@@ -391,6 +397,21 @@ def cmd_climate(
     return result
 
 
+def cmd_forecast(
+    place: Optional[str], country: Optional[str], lat: Optional[float], lon: Optional[float], start: str, end: str
+) -> Dict[str, Any]:
+    found = None
+    if lat is None or lon is None:
+        if not place:
+            raise RefusedError("give --place, or both --lat and --lon")
+        found = cmd_place(place, country, "en")["places"][0]
+        lat, lon = found["lat"], found["lon"]
+    result = climate.forecast(lat, lon, start, end)
+    if found:
+        result["place"] = found
+    return result
+
+
 def cmd_check(target: Path) -> Dict[str, Any]:
     path = validate.resolve(target)
     data = read_json(path)
@@ -653,6 +674,14 @@ def main(argv: Optional[List[str]] = None) -> int:
     weather.add_argument("--to", dest="end", required=True, help="last day, MM-DD")
     weather.add_argument("--years", type=int, default=5, help="years to average (default: 5)")
 
+    ahead = commands.add_parser("forecast", help="forecast of each day of a period at a place, up to 15 days ahead")
+    ahead.add_argument("--place", help="name of the place (the best match is used)")
+    ahead.add_argument("--country", help="two-letter country code, with --place")
+    ahead.add_argument("--lat", type=float)
+    ahead.add_argument("--lon", type=float)
+    ahead.add_argument("--from", dest="start", required=True, help="first day, YYYY-MM-DD")
+    ahead.add_argument("--to", dest="end", required=True, help="last day, YYYY-MM-DD")
+
     find = commands.add_parser("find-place", help="look points of interest up by name with a map service")
     find.add_argument("queries", nargs="+", help="what to look for, for example 'Senso-ji, Tokyo'")
     find.add_argument("--provider", choices=places.PROVIDERS, required=True)
@@ -751,6 +780,9 @@ def main(argv: Optional[List[str]] = None) -> int:
             code = 0
         elif args.command == "forget-key":
             result = cmd_forget_key(args.provider, args.data)
+            code = 0
+        elif args.command == "forecast":
+            result = cmd_forecast(args.place, args.country, args.lat, args.lon, args.start, args.end)
             code = 0
         elif args.command == "climate":
             result = cmd_climate(args.place, args.country, args.lat, args.lon, args.start, args.end, args.years)

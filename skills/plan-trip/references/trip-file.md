@@ -22,6 +22,8 @@ Use only the fields shown in these instructions and in the examples of the phase
 - **documents**: `type` (`passport`, `id_card`, `visa`, `driving_licence`, `other`), `country`, `expires`. Never a number.
 - **costs**: only what the user says; never invent prices. The cost of a booking goes in its `booking.cost`; `budget` holds only the costs with no booking (insurance, passes), so that nothing is counted twice.
 - **bookings**: `booking.links` holds where to book: the links made by `links` (`"generated": true`, replaced when the trip changes) and the official sites you add. Never card numbers or passwords.
+- **weather**: one entry per place and period, `climate` (average of the last years) or `forecast` (up to 15 days from the day it is asked); a new entry replaces the old one for the same place and dates.
+- **packing**: one list for the trip; `traveller` only for what belongs to one person; medicines and health data only here, never in the profile.
 - **deadlines**: `kind` is `booking`, `document`, `payment`, `cancellation` (last day to cancel for free) or `other`; `related` is the id of the stay, transport, place or traveller; `source` when the date comes from the web.
 - **data from outside** (opening hours, travel times, requirements, weather): always with its `source` (service, link, date of consultation).
 - **entry requirements**: `kind` is `document`, `visa`, `transit`, `minors`, `health`, `driving` or `other`; `status` is `ok`, `action_needed` or `unknown`; a `source` is required unless the status is `unknown`.

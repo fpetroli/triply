@@ -105,7 +105,7 @@ def check_trip(data: Any, today: Optional[datetime.date] = None) -> Report:
     _deadlines(data, report, today or datetime.date.today())
     _bookings(data, report)
     _requirements(data, report, today or datetime.date.today())
-    _weather(data, report)
+    _weather(data, report, today or datetime.date.today())
     return report
 
 
@@ -154,6 +154,8 @@ def _references(data: Dict[str, Any], report: Report) -> None:
         need(req["traveller"], travellers, f"/entry_requirements/{i}/traveller", "traveller")
     for i, entry in enumerate(data.get("weather", [])):
         need(entry["place"], places, f"/weather/{i}/place", "place")
+    for i, item in enumerate(data.get("packing", [])):
+        need(item.get("traveller"), travellers, f"/packing/{i}/traveller", "traveller")
     for i, deadline in enumerate(data.get("deadlines", [])):
         need(deadline.get("related"), anything, f"/deadlines/{i}/related", "id")
     for i, line in enumerate(data.get("budget", [])):
@@ -407,10 +409,30 @@ def _requirements(data: Dict[str, Any], report: Report, today: datetime.date) ->
                 report.warning(f"{path}/source/checked_at", "checked more than three months ago: check it again")
 
 
-def _weather(data: Dict[str, Any], report: Report) -> None:
-    for i, entry in enumerate(data.get("weather", [])):
+# The forecast reaches this many days from the day it is asked (Open-Meteo).
+FORECAST_DAYS = 16
+# A forecast older than this is to be asked again.
+FORECAST_MAX_AGE_DAYS = 2
+
+
+def _weather(data: Dict[str, Any], report: Report, today: datetime.date) -> None:
+    entries = data.get("weather", [])
+    for i, entry in enumerate(entries):
         if _date(entry["end"]) < _date(entry["start"]):
             report.error(f"/weather/{i}/end", "is earlier than 'start'")
+        if entry["kind"] == "forecast":
+            asked = _date(entry["source"]["checked_at"])
+            if (_date(entry["end"]) - asked).days >= FORECAST_DAYS:
+                report.error(f"/weather/{i}/end", f"a forecast reaches at most {FORECAST_DAYS - 1} days after the day it was asked")
+    start, end = _trip_range(data)
+    if not entries or not start or not end or end < today:
+        return
+    if (start - today).days < FORECAST_DAYS:
+        forecasts = [e for e in entries if e["kind"] == "forecast"]
+        if not forecasts:
+            report.warning("/weather", "the forecast is available now: update the weather")
+        elif min((today - _date(e["source"]["checked_at"])).days for e in forecasts) > FORECAST_MAX_AGE_DAYS:
+            report.warning("/weather", "the forecast is more than two days old: update it")
 
 
 # ------------------------------------------------------------- user profile

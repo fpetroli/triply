@@ -290,6 +290,7 @@
           "temp_max_c": {"type": "number"},
           "precipitation_mm": {"type": "number", "minimum": 0},
           "rain_days": {"type": "number", "minimum": 0, "description": "Days with at least 1 mm of precipitation in the period (an average, for climate)."},
+          "rain_probability_pct": {"type": "number", "minimum": 0, "maximum": 100, "description": "Highest chance of rain in the period, for a forecast."},
           "source": {"$ref": "#/$defs/source"}
         }
       }
@@ -305,6 +306,8 @@
           "category": {"enum": ["documents", "clothing", "health", "electronics", "toiletries", "gear", "other"]},
           "reason": {"type": "string"},
           "quantity": {"type": "integer", "minimum": 1},
+          "traveller": {"$ref": "#/$defs/id", "description": "Only for what belongs to one traveller (medicines, a child's things); shared items have none."},
+          "source": {"$ref": "#/$defs/source", "description": "For a fact read on the web, for example the type of the power sockets."},
           "packed": {"type": "boolean"}
         }
       }

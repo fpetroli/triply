@@ -35,6 +35,7 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/triply.py" <command> …
 | `check "<trip folder or trips folder>"` | Checks the trip file or the profile; for a valid trip file it also sets the date of the last change |
 | `place "<name>" [--country XX] [--language xx]` | Looks a place up by name: the best matches, with region, country and coordinates |
 | `climate --lat <lat> --lon <lon> --from MM-DD --to MM-DD` | Typical weather of that period of the year at that place, averaged over the last years, with its source (`--place "<name>"` instead of the coordinates takes the best match) |
+| `forecast --lat <lat> --lon <lon> --from YYYY-MM-DD --to YYYY-MM-DD` | The forecast of each day at that place, up to 15 days from today (`available_until` says where it stops) |
 | `find-place "<query>" ["<query>" …] --provider osm\|mapbox\|google [--near <lat>,<lon>] [--country XX] [--language xx] --data "${CLAUDE_PLUGIN_DATA}"` | Looks points of interest up by name (up to ten per call) with the map service of the trip: name, address, coordinates, category, id at the provider, opening hours when OpenStreetMap has them |
 | `check-place <place id> […] --provider osm\|mapbox\|google --trip "<trip folder>" [--language xx] --data "${CLAUDE_PLUGIN_DATA}"` | Looks the places of the trip up again at the map service (up to 50 per call): found or not, open for business or closed, opening hours, website |
 | `route <place id> <place id> […] --provider osm\|mapbox\|google --mode walk\|bike\|car\|public_transport [--depart <date>T<time>:00<offset>] --trip "<trip folder>" --data "${CLAUDE_PLUGIN_DATA}"` | Travel time and distance between consecutive places (up to 10 per call); public transport only with Google; points can also be `<lat>,<lon>` |
@@ -44,7 +45,7 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/triply.py" <command> …
 | `keys --data "${CLAUDE_PLUGIN_DATA}"` | Which map service keys are saved, and the file where they live (never the keys themselves) |
 | `set-key mapbox\|google "<key>" --data "${CLAUDE_PLUGIN_DATA}"` | Saves the key of Mapbox or Google, outside the trips folder, readable only by the user |
 | `forget-key mapbox\|google --data "${CLAUDE_PLUGIN_DATA}"` | Removes a saved key |
-| `guide <topic>` | Prints the instructions on a topic: the phases (`setup`, `brief`, `destination`, `entry-requirements`, `route`, `days`, `verification`, `bookings`) and the rules of the trip file (`trip-file`) |
+| `guide <topic>` | Prints the instructions on a topic: the phases (`setup`, `brief`, `destination`, `entry-requirements`, `route`, `days`, `verification`, `bookings`, `weather-packing`) and the rules of the trip file (`trip-file`) |
 
 Run **one command per call**, never chained with `;`, `&&` or pipes, and never with the trip data on the command line: the user approves this script once ("don't ask again"), and only a plain call matches that approval.
 
@@ -61,8 +62,8 @@ Read the instructions of a phase only with `guide`, never by opening files of th
    - **the user wants a new trip** → phase 1: run `guide brief`;
    - **otherwise** → show the trips in a short list (title, where it stands, next step) and ask which one to continue, or whether to start a new one.
 3. When the trips folder is outside the current folder (`found_by` is `remembered`), every change to its files may ask the user for a permission. Mention once, in one line, that opening Claude directly in the trips folder avoids these requests.
-4. To **resume** a trip, read its `.triply/trip.json`, then tell the user in two or three lines where the trip stands (phase reached, last choices, open points, next step) and propose to continue from the next step. When an entry requirement was checked more than three months ago and the trip is still to come, say so and propose to check it again (`guide entry-requirements`). When a deadline is overdue or due within a week, say so first.
-5. When the user says they have **booked or paid** something, in any phase, record it as `guide bookings` says (section 5), then go back to where you were.
+4. To **resume** a trip, read its `.triply/trip.json`, then tell the user in two or three lines where the trip stands (phase reached, last choices, open points, next step) and propose to continue from the next step. When an entry requirement was checked more than three months ago and the trip is still to come, say so and propose to check it again (`guide entry-requirements`). When a deadline is overdue or due within a week, say so first. When the trip starts within 15 days and the weather is not a recent forecast, offer to update it (`guide weather-packing`, section 5).
+5. When the user says they have **booked or paid** something, in any phase, record it as `guide bookings` says (section 5), then go back to where you were. The same for what they have **packed** (`guide weather-packing`, section 5).
 
 ## The phases
 
@@ -76,7 +77,7 @@ Read the instructions of a phase only with `guide`, never by opening files of th
 | 5 — the days (`days`) | Overview of the days, then proposals, then details, with the places looked up on the map service | `guide days` |
 | 6 — verification (`verification`) | Places exist and are open on their day; times between stops and between bases are realistic; the problems are solved with the user | `guide verification` |
 | 7 — bookings and deadlines (`bookings`) | What to book and by when, with search links already filled in; then, at any time, what the user has booked and spent | `guide bookings` |
-| 8 — weather and packing (`weather_packing`) | Forecast or climate, packing list | not available yet |
+| 8 — weather and packing (`weather_packing`) | Typical weather or forecast of each base, packing list from weather, activities and documents | `guide weather-packing` |
 | 9 — documents (`documents`) | Itinerary with map, deadlines calendar, packing list | not available yet |
 
 When the trip reaches a phase that is **not available yet**, tell the user plainly that this version of triply stops here, that everything decided so far is saved, and that the next version will continue from this point. Do not improvise the missing phases.

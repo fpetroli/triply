@@ -48,7 +48,7 @@ When the user agrees:
 - `progress.phase` → `weather_packing`; `next_step`;
 - run `check` and fix every warning about the deadlines.
 
-Tell the user that from now on, at any time, they can simply tell you what they have booked ("ho prenotato l'hotel a Kyoto, 480 euro, cancellazione gratuita fino al 1° marzo") and triply keeps the list and the budget up to date.
+Tell the user that from now on, at any time, they can simply tell you what they have booked ("ho prenotato l'hotel a Kyoto, 480 euro, cancellazione gratuita fino al 1° marzo") and triply keeps the list and the budget up to date. Then propose to go on with phase 8: `guide weather-packing`.
 
 ## 5. When the user has booked something
 

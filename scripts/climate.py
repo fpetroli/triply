@@ -5,6 +5,8 @@
   year (for example 1 to 31 August) with the Open-Meteo historical weather
   API: mean daily maximum and minimum temperature, mean precipitation and
   mean number of rainy days in the period.
+- ``forecast`` gives the forecast of each day, up to ``FORECAST_DAYS`` days
+  from today, with the Open-Meteo forecast API.
 
 Open-Meteo needs no account and is free for non-commercial use
 (https://open-meteo.com/en/terms). Every result carries its source.
@@ -21,6 +23,8 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
 ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
+FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
+FORECAST_DAYS = 16  # today and the next 15 days
 USER_AGENT = "triply (https://github.com/fpetroli/triply)"
 
 # A day with at least this much precipitation counts as a rainy day.
@@ -193,3 +197,91 @@ def climate(
             "checked_at": today.isoformat(),
         },
     }
+
+
+# ---------------------------------------------------------------- forecast
+
+# WMO weather codes used by Open-Meteo, grouped.
+_WEATHER = [
+    ((0,), "clear"),
+    ((1, 2), "partly cloudy"),
+    ((3,), "overcast"),
+    ((45, 48), "fog"),
+    ((51, 53, 55, 56, 57), "drizzle"),
+    ((61, 63, 65, 66, 67, 80, 81, 82), "rain"),
+    ((71, 73, 75, 77, 85, 86), "snow"),
+    ((95, 96, 99), "thunderstorm"),
+]
+
+
+def weather_text(code: Optional[int]) -> Optional[str]:
+    for codes, text in _WEATHER:
+        if code in codes:
+            return text
+    return None
+
+
+def forecast(
+    lat: float,
+    lon: float,
+    start: str,
+    end: str,
+    today: Optional[datetime.date] = None,
+    fetch: Fetch = None,
+) -> Dict[str, Any]:
+    """The forecast of each day from ``start`` to ``end``, cut at the last day available."""
+    fetch = fetch or fetch_json
+    today = today or datetime.date.today()
+    first, last = datetime.date.fromisoformat(start), datetime.date.fromisoformat(end)
+    if last < first:
+        raise ValueError("--to is earlier than --from")
+    horizon = today + datetime.timedelta(days=FORECAST_DAYS - 1)
+    if first > horizon:
+        available = first - datetime.timedelta(days=FORECAST_DAYS - 1)
+        raise ValueError(f"no forecast yet for {start}: it is available from {available.isoformat()}")
+    first = max(first, today)
+    cut = last > horizon
+    last = min(last, horizon)
+    if last < first:
+        raise ValueError("these days are in the past")
+    url = _url(
+        FORECAST_URL,
+        {
+            "latitude": round(lat, 4),
+            "longitude": round(lon, 4),
+            "start_date": first.isoformat(),
+            "end_date": last.isoformat(),
+            "daily": "temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,weather_code",
+            "timezone": "auto",
+        },
+    )
+    data = fetch(url)
+    try:
+        daily = data["daily"]
+        rows = zip(
+            daily["time"],
+            daily["temperature_2m_max"],
+            daily["temperature_2m_min"],
+            daily["precipitation_sum"],
+            daily["precipitation_probability_max"],
+            daily["weather_code"],
+        )
+    except (KeyError, TypeError) as exc:
+        raise ServiceError(f"unexpected answer from Open-Meteo: {exc}") from exc
+    days = []
+    for day, tmax, tmin, rain, chance, code in rows:
+        entry: Dict[str, Any] = {"date": day, "temp_max_c": tmax, "temp_min_c": tmin, "precipitation_mm": rain}
+        if chance is not None:
+            entry["rain_probability_pct"] = chance
+        if weather_text(code):
+            entry["weather"] = weather_text(code)
+        days.append(entry)
+    result: Dict[str, Any] = {
+        "lat": round(lat, 4),
+        "lon": round(lon, 4),
+        "days": days,
+        "source": {"provider": "open-meteo", "url": url, "title": "Open-Meteo weather forecast", "checked_at": today.isoformat()},
+    }
+    if cut:
+        result["available_until"] = horizon.isoformat()
+    return result
