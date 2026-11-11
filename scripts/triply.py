@@ -50,7 +50,11 @@ rename-trip
 check
     Checks a trip folder, a trips folder (its profile) or a JSON file. When a
     trip file has no errors, it sets ``trip.updated`` to today and rewrites the
-    file in a stable format.
+    file in a stable format; once the trip has its days, it also writes the
+    documents for the user next to it (itinerary as web page and Markdown,
+    calendar, packing list), reading back first the ticks the user changed in
+    the packing list. A file with the same name that triply did not make is
+    never overwritten.
 
 place
     Looks a place up by name (Open-Meteo geocoding): name, region, country,
@@ -132,6 +136,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import bookings  # noqa: E402
 import calendar_days  # noqa: E402
 import climate  # noqa: E402
+import documents  # noqa: E402
 import places  # noqa: E402
 import routes  # noqa: E402
 import validate  # noqa: E402
@@ -417,10 +422,13 @@ def cmd_check(target: Path) -> Dict[str, Any]:
     data = read_json(path)
     kind = "profile" if path.name.endswith(PROFILE_FILE) else "trip"
     report = validate.check_profile(data) if kind == "profile" else validate.check_trip(data)
+    made = None
     if kind == "trip" and report.ok:
         data["trip"]["updated"] = today()
+        if data["days"] and path.parent.name == TRIPLY:
+            made = documents.build(data, path.parent.parent)
         write_json(path, data)
-    return {
+    result = {
         "file": str(path),
         "kind": kind,
         "ok": report.ok,
@@ -428,6 +436,9 @@ def cmd_check(target: Path) -> Dict[str, Any]:
         "warnings": report.count(validate.WARNING),
         "issues": report.issues,
     }
+    if made is not None:
+        result["documents"] = made
+    return result
 
 
 def _need_data(data_dir: Optional[Path]) -> Path:

@@ -47,7 +47,7 @@ When the user agrees:
 - `progress.phase` → `documents`; `next_step`;
 - run `check`.
 
-Tell the user: the weather in two lines, how many items are on the list, that they can tell you what they have packed ("ho messo in valigia i documenti") and you tick it off, and that the forecast will be offered when the trip is reopened in the last 15 days before departure.
+Tell the user: the weather in two lines, how many items are on the list, that they can tell you what they have packed ("ho messo in valigia i documenti") and you tick it off, and that the forecast will be offered when the trip is reopened in the last 15 days before departure. Then propose to go on with phase 9: `guide documents`.
 
 ## 5. Later: the forecast and the ticks
 

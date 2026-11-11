@@ -2,7 +2,7 @@
 
 A plugin for Claude that helps you plan and organize your vacations.
 
-> **Status:** early development. triply can set up your trips folder, collect the brief of a new trip, help you choose the destination, check the entry requirements of every traveller on official sources and plan the route with its bases and the days, check them (places open on their day, realistic travel times) list what to book and by when, keeping track of what you booked and spent, and prepare the weather and the packing list; the last phase (documents) is coming.
+> **Status:** early development. triply can set up your trips folder, collect the brief of a new trip, help you choose the destination, check the entry requirements of every traveller on official sources and plan the route with its bases and the days, check them (places open on their day, realistic travel times) list what to book and by when, keeping track of what you booked and spent, prepare the weather and the packing list, and write the documents of the trip: itinerary with maps, calendar, packing list.
 
 ## What it will do
 
@@ -45,6 +45,16 @@ For what to book, triply prepares links that open Booking.com, Airbnb, Google Fl
 
 With OpenStreetMap, place and route data is © OpenStreetMap contributors ([fix the map](https://www.openstreetmap.org/fixthemap)).
 
+## The documents
+
+In each trip folder, in your language, kept up to date after every change from the moment the days are planned:
+
+- the itinerary as a web page with maps, to open in the browser, and as text (Markdown);
+- a calendar file (`.ics`) to import into Google, Apple or Outlook calendar: every deadline with two reminders, the stays and the moves between bases;
+- the packing list with checkboxes: tick them in any editor, and triply reads them back.
+
+The maps of the itinerary use [OpenFreeMap](https://openfreemap.org/) (OpenStreetMap data, no key) with [MapLibre GL JS](https://maplibre.org/), loaded from unpkg; they need an internet connection, the rest of the page does not. A Mapbox or Google key never goes into these files, which you may share.
+
 ## Your trips folder
 
 triply works in a folder you choose, for example `Trips` on your desktop, with one folder per trip. The files meant for you (itinerary, deadlines, packing list) are at the top of each trip folder, in your language; the files meant for the AI are in a hidden `.triply` folder. triply only rewrites the files it generates and never changes or deletes yours.
@@ -85,6 +95,7 @@ To check opening hours and timetables, Claude reads the official site of the pla
 - `scripts/routes.py` — travel times with OpenStreetMap (OSRM servers of FOSSGIS), Mapbox (Directions) or Google (Routes API);
 - `scripts/calendar_days.py` — weekdays and public holidays (Nager.Date);
 - `scripts/bookings.py` — search links already filled in, and the costs of a trip;
+- `scripts/documents.py` — the documents for the user: itinerary (HTML and Markdown), calendar (iCalendar), packing list;
 - `scripts/validate.py` — checks a trip file or a profile against its schema and against the coherence rules (references, dates, planning rules):
 
   ```

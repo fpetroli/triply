@@ -12,7 +12,7 @@ Request of the user: $ARGUMENTS
 
 ## How to talk to the user
 
-- Talk in the user's language, in every message, including the short notes on what you are doing. Everything you write for the user — folder names, file contents, free text in the trip file — is in that language; JSON field names stay in English.
+- Talk in the user's language, in every message, including the short notes on what you are doing between one step and the next ("Ora scrivo i documenti", not "Now I write the documents"): these instructions are in English, your words to the user never are, unless the user writes in English. Everything you write for the user — folder names, file contents, free text in the trip file — is in that language; JSON field names stay in English.
 - The user never needs to know commands, scripts or file formats. Do not show JSON, paths inside `.triply` or script output: say what you did in plain words.
 - Ask only what you do not already know, in **one grouped message** per phase, with a sensible default the user can accept with one word.
 - At the end of every phase, stop: say in a few lines what was decided and what comes next, and continue only when the user agrees.
@@ -32,7 +32,7 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/triply.py" <command> …
 | `init "<folder>" --data "${CLAUDE_PLUGIN_DATA}"` | Creates the trips folder and remembers it; never touches existing files |
 | `new-trip "<trips folder>" --title "<title>" [--travellers id,id]` | Creates the trip folder and its trip file (status `idea`, phase `brief`), with language, map service, currency and the chosen travellers taken from the profile |
 | `rename-trip "<trip folder>" --title "<title>"` | Renames the trip folder after a new title, with everything inside it, and updates the title in the trip file |
-| `check "<trip folder or trips folder>"` | Checks the trip file or the profile; for a valid trip file it also sets the date of the last change |
+| `check "<trip folder or trips folder>"` | Checks the trip file or the profile; for a valid trip file it also sets the date of the last change and, once the trip has its days, writes the documents for the user (reading back the ticks of the packing list first) |
 | `place "<name>" [--country XX] [--language xx]` | Looks a place up by name: the best matches, with region, country and coordinates |
 | `climate --lat <lat> --lon <lon> --from MM-DD --to MM-DD` | Typical weather of that period of the year at that place, averaged over the last years, with its source (`--place "<name>"` instead of the coordinates takes the best match) |
 | `forecast --lat <lat> --lon <lon> --from YYYY-MM-DD --to YYYY-MM-DD` | The forecast of each day at that place, up to 15 days from today (`available_until` says where it stops) |
@@ -45,7 +45,7 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/triply.py" <command> …
 | `keys --data "${CLAUDE_PLUGIN_DATA}"` | Which map service keys are saved, and the file where they live (never the keys themselves) |
 | `set-key mapbox\|google "<key>" --data "${CLAUDE_PLUGIN_DATA}"` | Saves the key of Mapbox or Google, outside the trips folder, readable only by the user |
 | `forget-key mapbox\|google --data "${CLAUDE_PLUGIN_DATA}"` | Removes a saved key |
-| `guide <topic>` | Prints the instructions on a topic: the phases (`setup`, `brief`, `destination`, `entry-requirements`, `route`, `days`, `verification`, `bookings`, `weather-packing`) and the rules of the trip file (`trip-file`) |
+| `guide <topic>` | Prints the instructions on a topic: the phases (`setup`, `brief`, `destination`, `entry-requirements`, `route`, `days`, `verification`, `bookings`, `weather-packing`, `documents`) and the rules of the trip file (`trip-file`) |
 
 Run **one command per call**, never chained with `;`, `&&` or pipes, and never with the trip data on the command line: the user approves this script once ("don't ask again"), and only a plain call matches that approval.
 
@@ -78,9 +78,9 @@ Read the instructions of a phase only with `guide`, never by opening files of th
 | 6 — verification (`verification`) | Places exist and are open on their day; times between stops and between bases are realistic; the problems are solved with the user | `guide verification` |
 | 7 — bookings and deadlines (`bookings`) | What to book and by when, with search links already filled in; then, at any time, what the user has booked and spent | `guide bookings` |
 | 8 — weather and packing (`weather_packing`) | Typical weather or forecast of each base, packing list from weather, activities and documents | `guide weather-packing` |
-| 9 — documents (`documents`) | Itinerary with map, deadlines calendar, packing list | not available yet |
+| 9 — documents (`documents`) | Itinerary with maps (web page and text), calendar of deadlines and of the trip, packing list to tick off; kept up to date by `check` | `guide documents` |
 
-When the trip reaches a phase that is **not available yet**, tell the user plainly that this version of triply stops here, that everything decided so far is saved, and that the next version will continue from this point. Do not improvise the missing phases.
+After phase 9 the trip stays in phase `documents`: keep it up to date with what the user books, packs or changes, and with the forecast before departure.
 
 ## The trip file
 

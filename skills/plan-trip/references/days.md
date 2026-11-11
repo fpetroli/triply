@@ -73,4 +73,4 @@ When the user agrees:
 
 ## 4. Close the phase
 
-Tell the user, in a few lines: the days at a glance, what still needs a booking, and the next step: the verification of places, opening hours and times with the map service. Then propose to go on with phase 6: `guide verification`.
+Tell the user, in a few lines: the days at a glance, what still needs a booking, that a first draft of the itinerary is ready in the trip folder (the file name is in the `documents` of the last `check`: open the web page in the browser) and is updated after every change, and the next step: the verification of places, opening hours and times with the map service. Then propose to go on with phase 6: `guide verification`.
