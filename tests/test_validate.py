@@ -188,6 +188,23 @@ class TripTest(unittest.TestCase):
         self.trip["days"][0]["items"][1]["start"] = "14:00"
         self.assertIssue("warning", "/days/0/items/1/start", "earlier than the previous stop")
 
+    def test_backup_is_not_part_of_the_sequence(self):
+        # The backup starts earlier than the stop before it, and overlaps it.
+        self.assertEqual(self.trip["days"][0]["items"][2]["role"], "backup")
+        found = messages(self.check())
+        self.assertFalse([m for m in found if "/days/0/" in m], found)
+
+    def test_same_place_twice_in_a_day(self):
+        items = self.trip["days"][0]["items"]
+        items[1]["place"] = items[0]["place"]
+        self.assertIssue("warning", "/days/0/items/1/place", "already stop 1 of the day")
+
+    def test_gap_checked_across_a_backup(self):
+        items = self.trip["days"][0]["items"]
+        items.insert(1, items.pop(2))  # main, backup, secondary
+        items[0]["to_next"]["minutes"] = 40
+        self.assertIssue("warning", "/days/0/items/2/start", "10 minutes missing")
+
     def test_failed_verification(self):
         self.trip["places"]["uffizi"]["verification"]["status"] = "failed"
         self.assertIssue("warning", "/days/1/items/0/place", "failed its verification")
@@ -329,6 +346,15 @@ class TripTest(unittest.TestCase):
         self.trip["progress"]["phase"] = "bookings"
         del self.trip["days"][0]["items"][0]["to_next"]
         self.assertIssue("warning", "/days/0/items/0/to_next", "has no time")
+
+    def test_backup_needs_no_move_after_verification(self):
+        self.trip["progress"]["phase"] = "bookings"
+        items = self.trip["days"][0]["items"]
+        items.insert(1, items.pop(2))  # main, backup, secondary
+        text = " ".join(messages(self.check()))
+        self.assertNotIn("/days/0/items/1/to_next", text)
+        self.assertNotIn("/days/0/items/0/to_next", text)
+        self.assertIn("/days/0/items/2/place: 'boboli' has not been verified", text)
 
     def test_estimate_with_a_source(self):
         self.trip["transports"][1]["duration_source"] = {"provider": "web", "checked_at": "2027-03-10"}

@@ -1,6 +1,6 @@
 ---
 name: plan-trip
-description: Plans a vacation with the user step by step, from a first idea to a trip that is ready to go, or resumes a trip already started exactly where it was left. Use when the user wants to plan, organize or think about a trip or a vacation, start a new trip, continue or review a trip planned with triply, or asks where a trip stands, in any language.
+description: Plans a vacation with the user step by step, from a first idea to a trip that is ready to go, or resumes a trip already started exactly where it was left. Use when the user wants to plan, organize or think about a trip or a vacation, start a new trip, continue or review a trip planned with triply, asks where a trip stands, or asks to test whether triply works where they are (triply's self-test, again in a new conversation), in any language.
 argument-hint: "[what the user wants, for example: a trip to Japan next spring]"
 ---
 
@@ -13,6 +13,7 @@ Request of the user: $ARGUMENTS
 ## How to talk to the user
 
 - Talk in the user's language, in every message, including the short notes on what you are doing between one step and the next ("Ora scrivo i documenti", not "Now I write the documents"): these instructions are in English, your words to the user never are, unless the user writes in English. Everything you write for the user — folder names, file contents, free text in the trip file — is in that language; JSON field names stay in English.
+- Everything you write outside the tool calls is shown to the user: never write notes to yourself there ("Only one trip; resume it."). Think silently, and write only messages meant for the user, in their language.
 - The user never needs to know commands, scripts or file formats. Do not show JSON, paths inside `.triply` or script output: say what you did in plain words.
 - Ask only what you do not already know, in **one grouped message** per phase, with a sensible default the user can accept with one word.
 - At the end of every phase, stop: say in a few lines what was decided and what comes next, and continue only when the user agrees.
@@ -45,6 +46,7 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/triply.py" <command> …
 | `keys --data "${CLAUDE_PLUGIN_DATA}"` | Which map service keys are saved, and the file where they live (never the keys themselves) |
 | `set-key mapbox\|google "<key>" --data "${CLAUDE_PLUGIN_DATA}"` | Saves the key of Mapbox or Google, outside the trips folder, readable only by the user |
 | `forget-key mapbox\|google --data "${CLAUDE_PLUGIN_DATA}"` | Removes a saved key |
+| `doctor [--folder "<trips folder>"] --data "${CLAUDE_PLUGIN_DATA}"` | Self-test: whether the folder can be read and written, whether the plugin data folder keeps its data between conversations, whether each web service of the script answers (with the saved keys, if any) |
 | `guide <topic>` | Prints the instructions on a topic: the phases (`setup`, `brief`, `destination`, `entry-requirements`, `route`, `days`, `verification`, `bookings`, `weather-packing`, `documents`) and the rules of the trip file (`trip-file`) |
 
 Run **one command per call**, never chained with `;`, `&&` or pipes, and never with the trip data on the command line: the user approves this script once ("don't ask again"), and only a plain call matches that approval.
@@ -53,10 +55,18 @@ The output is JSON, except for `guide`. Exit status 1 means refused, errors foun
 
 Read the instructions of a phase only with `guide`, never by opening files of the plugin: the plugin folder is often outside the folders you may read without asking the user.
 
+**Self-test.** Run `doctor` when the user asks whether triply works where they are (another computer, the desktop app) or asks for triply's self-test, and when several commands fail with `cannot read or write` or `unavailable`. Give `--folder` the trips folder when you know it. Tell the user in plain words what works and what does not:
+
+- `problems` empty: everything works;
+- the folder cannot be read or written: triply cannot keep the trips there; ask the user to open or connect the trips folder (in the desktop app, the folder must be one they connected);
+- `blocked_hosts`: the environment does not let the script reach those sites; the features in `used_for` do not work. Give the user the list of hosts: in the desktop app, network access for code is set in the app's settings, and a change counts only in a new conversation;
+- `data.previous_run` empty: first run in this place; a second run in a new conversation tells whether the keys and the trips folder are remembered between conversations. When it stays empty, say that keys must be given again in each conversation.
+
 ## Start of every conversation
 
 1. Run `locate`.
 2. Decide what to do:
+   - **the user asks for triply's self-test**, or whether triply works here or remembers its data between conversations → run `doctor` and explain the result (see **Self-test** above), then ask whether to go on with a trip;
    - **no trips folder, or no profile** → phase 0, the first setup: run `guide setup`;
    - **the current folder belongs to a trip**, or the user names a trip in the list → resume that trip;
    - **the user wants a new trip** → phase 1: run `guide brief`;

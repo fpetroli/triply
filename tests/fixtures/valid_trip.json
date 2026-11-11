@@ -80,7 +80,8 @@
       "items": [
         {"place": "ponte-vecchio", "role": "main", "start": "15:00", "duration_min": 60,
          "to_next": {"mode": "walk", "minutes": 10, "distance_km": 0.8, "source": {"provider": "osm", "checked_at": "2027-03-09"}}},
-        {"place": "boboli", "role": "backup", "start": "16:30", "duration_min": 90}
+        {"place": "boboli", "role": "secondary", "start": "16:30", "duration_min": 90},
+        {"place": "uffizi", "role": "backup", "start": "15:00", "duration_min": 120, "notes": "In case of rain."}
       ]
     },
     {

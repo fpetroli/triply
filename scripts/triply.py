@@ -22,6 +22,7 @@ Usage:
     python3 triply.py set-key mapbox|google KEY --data DIR
     python3 triply.py forget-key mapbox|google --data DIR
     python3 triply.py guide TOPIC
+    python3 triply.py doctor [--folder DIR] [--data DIR]
 
 Every command prints JSON on standard output.
 
@@ -109,6 +110,13 @@ keys, set-key, forget-key
     can also write it by hand); ``set-key`` saves a key after a check of its
     form; ``forget-key`` removes it. A key is never printed.
 
+doctor
+    Self-test of triply where it runs: whether ``--folder`` (default: the
+    current folder) can be read and written, whether ``--data`` is writable
+    and keeps a mark from an earlier run, and whether every web service used
+    by the script answers (Mapbox and Google with the saved key, if any). It
+    lists the problems and the hosts that could not be reached.
+
 guide
     Prints the instructions of the planning skill on TOPIC (a file in
     ``skills/plan-trip/references``). Claude reads them this way because the
@@ -136,6 +144,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import bookings  # noqa: E402
 import calendar_days  # noqa: E402
 import climate  # noqa: E402
+import doctor  # noqa: E402
 import documents  # noqa: E402
 import places  # noqa: E402
 import routes  # noqa: E402
@@ -149,6 +158,10 @@ KEYS_FILE = "keys.json"
 KEY_PROVIDERS = ("mapbox", "google")
 MAX_QUERIES = 10
 GUIDES = Path(__file__).resolve().parent.parent / "skills" / "plan-trip" / "references"
+LANGUAGE_REMINDER = (
+    "> Write every message to the user, short progress notes included, in the user's language "
+    "(the language of the trip), never in the language of these instructions or of the sources you read.\n\n"
+)
 
 # Characters that are not allowed in folder names on Windows, macOS or Linux.
 _FORBIDDEN = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
@@ -438,6 +451,8 @@ def cmd_check(target: Path) -> Dict[str, Any]:
     }
     if made is not None:
         result["documents"] = made
+    if kind == "trip" and isinstance(data.get("trip"), dict) and data["trip"].get("language"):
+        result["talk_to_user_in"] = data["trip"]["language"]
     return result
 
 
@@ -627,6 +642,23 @@ def cmd_calendar(start: str, end: str, country: Optional[str]) -> Dict[str, Any]
     return calendar_days.calendar(country, start, end, today())
 
 
+def cmd_doctor(folder: Path, data_dir: Optional[Path]) -> Dict[str, Any]:
+    keys: Dict[str, str] = {}
+    if data_dir is not None:
+        try:
+            keys = load_keys(data_dir)
+        except RefusedError:
+            keys = {}
+    folder = folder.expanduser().resolve()
+    report = doctor.run(folder, data_dir.expanduser().resolve() if data_dir else None, keys)
+    trips_folder = _find_up(folder, is_trips_folder)
+    if trips_folder is None:
+        inside = _trips_folders_inside(folder)
+        trips_folder = inside[0] if len(inside) == 1 else None
+    report["folder"]["trips_folder"] = str(trips_folder) if trips_folder else None
+    return report
+
+
 def guide_topics() -> List[str]:
     return sorted(p.stem for p in GUIDES.glob("*.md"))
 
@@ -634,7 +666,9 @@ def guide_topics() -> List[str]:
 def cmd_guide(topic: str) -> str:
     if topic not in guide_topics():
         raise RefusedError(f"unknown topic {topic!r}; topics: {', '.join(guide_topics())}")
-    return (GUIDES / f"{topic}.md").read_text(encoding="utf-8")
+    # Long English instructions pull the replies into English: every guide
+    # starts with the rule, where Claude reads it right before acting.
+    return LANGUAGE_REMINDER + (GUIDES / f"{topic}.md").read_text(encoding="utf-8")
 
 
 class RefusedError(Exception):
@@ -737,6 +771,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     forget_key.add_argument("provider", choices=KEY_PROVIDERS)
     forget_key.add_argument("--data", type=Path, required=True)
 
+    selftest = commands.add_parser("doctor", help="self-test: folder, plugin data and web services")
+    selftest.add_argument("--folder", type=Path, default=Path.cwd(), help="folder to test (default: current)")
+    selftest.add_argument("--data", type=Path, help="folder where the plugin keeps its own data")
+
     guide = commands.add_parser("guide", help="print the instructions of the planning skill on a topic")
     guide.add_argument("topic")
 
@@ -795,6 +833,9 @@ def main(argv: Optional[List[str]] = None) -> int:
         elif args.command == "forecast":
             result = cmd_forecast(args.place, args.country, args.lat, args.lon, args.start, args.end)
             code = 0
+        elif args.command == "doctor":
+            result = cmd_doctor(args.folder, args.data)
+            code = 0 if result["ok"] else 1
         elif args.command == "climate":
             result = cmd_climate(args.place, args.country, args.lat, args.lon, args.start, args.end, args.years)
             code = 0

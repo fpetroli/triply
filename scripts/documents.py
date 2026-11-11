@@ -808,7 +808,12 @@ def packing_keys(packing: List[Dict[str, Any]]) -> List[str]:
 
 
 def read_ticks(text: str, data: Dict[str, Any]) -> int:
-    """Bring into the trip file what the user changed in the packing list file. Returns the number of changes.
+    """Bring into the trip file what the user changed in the packing list file. Returns the number of changes."""
+    return len(read_packing_file(text, data))
+
+
+def read_packing_file(text: str, data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Bring into the trip file what the user changed in the packing list file. Returns the changes.
 
     A line made by triply carries its key and the state it was written with:
     when the box differs from that state, the user ticked or unticked it in
@@ -817,7 +822,7 @@ def read_ticks(text: str, data: Dict[str, Any]) -> int:
     """
     packing = data.setdefault("packing", [])
     index = dict(zip(packing_keys(packing), packing))
-    changes = 0
+    changes: List[Dict[str, Any]] = []
     for line in text.splitlines():
         match = _TICK.match(line)
         if not match:
@@ -827,10 +832,10 @@ def read_ticks(text: str, data: Dict[str, Any]) -> int:
             item = index.get(match["key"])
             if item is not None and ticked != (match["was"] == "1"):
                 item["packed"] = ticked
-                changes += 1
+                changes.append({"item": item["item"], "change": "packed" if ticked else "unpacked"})
         elif match["text"]:
             packing.append({"item": match["text"], "category": "other", "packed": ticked})
-            changes += 1
+            changes.append({"item": match["text"], "change": "added_packed" if ticked else "added"})
     return changes
 
 
@@ -951,7 +956,12 @@ def build(data: Dict[str, Any], trip_folder: Path) -> Dict[str, Any]:
     result: Dict[str, Any] = {"written": [], "skipped": [], "ticks_read": 0}
     packing_file = names["packing"]
     if packing_file.is_file() and _ours(packing_file):
-        result["ticks_read"] = read_ticks(packing_file.read_text(encoding="utf-8", errors="replace"), data)
+        changes = read_packing_file(packing_file.read_text(encoding="utf-8", errors="replace"), data)
+        result["ticks_read"] = len(changes)
+        if changes:
+            result["from_packing_file"] = changes
+    if data.get("packing"):
+        result["packing"] = {"packed": sum(1 for p in data["packing"] if p["packed"]), "total": len(data["packing"])}
     contents = {
         "itinerary_html": render_html(data, L),
         "itinerary_md": render_markdown(data, L),

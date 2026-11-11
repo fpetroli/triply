@@ -226,6 +226,18 @@ def _days(data: Dict[str, Any], report: Report) -> None:
         if len(mains) > 1:
             report.warning(f"{path}/items", "more than one main activity in the same day")
 
+        # Backups replace a stop only when needed: they are not part of the
+        # sequence of the day, so times and moves are checked without them.
+        sequence = [i for i, item in enumerate(day["items"]) if item["role"] != "backup"]
+        first_stop: Dict[str, int] = {}
+        for i in sequence:
+            name = day["items"][i]["place"]
+            if name in first_stop:
+                report.warning(
+                    f"{path}/items/{i}/place",
+                    f"'{name}' is already stop {first_stop[name] + 1} of the day: give a different place its own entry in places",
+                )
+            first_stop.setdefault(name, i)
         last_start = None
         for i, item in enumerate(day["items"]):
             where = f"{path}/items/{i}"
@@ -242,21 +254,25 @@ def _days(data: Dict[str, Any], report: Report) -> None:
                 report.warning(f"{where}/verification", f"'{item['place']}' on {day['date']} is to review" + _because(stop))
             move = item.get("to_next")
             if move is not None:
-                if i == len(day["items"]) - 1:
+                if i in sequence and i == sequence[-1]:
                     report.warning(f"{where}/to_next", "the last stop of the day has a move to a next one")
                 if "source" not in move and not move.get("estimated"):
                     report.error(f"{where}/to_next", "needs its source, or 'estimated': true")
+            if i not in sequence:
+                continue
             if "start" in item:
                 if last_start and item["start"] < last_start:
                     report.warning(f"{where}/start", "starts earlier than the previous stop")
                 last_start = item["start"]
-            following = day["items"][i + 1] if i + 1 < len(day["items"]) else None
+            position = sequence.index(i)
+            nxt = sequence[position + 1] if position + 1 < len(sequence) else None
+            following = day["items"][nxt] if nxt is not None else None
             if following and "start" in item and "start" in following and "duration_min" in item:
                 ready = _minutes(item["start"]) + item["duration_min"] + (move or {}).get("minutes", 0)
                 late = ready - _minutes(following["start"])
                 if late > 0:
                     report.warning(
-                        f"{path}/items/{i + 1}/start",
+                        f"{path}/items/{nxt}/start",
                         f"not enough time to get from '{item['place']}' to '{following['place']}': {late} minutes missing",
                     )
         if PHASES.index(data["progress"]["phase"]) > PHASES.index("verification"):
@@ -275,11 +291,13 @@ def _minutes(time: str) -> int:
 def _verified_day(data: Dict[str, Any], day: Dict[str, Any], path: str, report: Report) -> None:
     """After the verification phase, every stop is checked and every move has its time."""
     items = day["items"]
+    sequence = [i for i, item in enumerate(items) if item["role"] != "backup"]
     for i, item in enumerate(items):
         status = data["places"].get(item["place"], {}).get("verification", {}).get("status", "unverified")
         if status == "unverified":
             report.warning(f"{path}/items/{i}/place", f"'{item['place']}' has not been verified")
-        if i < len(items) - 1 and "to_next" not in item:
+        # A backup has no move of its own: it takes the place of a stop.
+        if i in sequence and i != sequence[-1] and "to_next" not in item:
             report.warning(f"{path}/items/{i}/to_next", f"the move from '{item['place']}' to the next stop has no time")
 
 

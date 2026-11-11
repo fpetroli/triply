@@ -138,6 +138,7 @@ class TripsFolderTest(unittest.TestCase):
             code, result = run("check", created["trip_folder"])
         self.assertEqual(code, 0, result)
         self.assertEqual(json.loads(trip_file.read_text(encoding="utf-8"))["trip"]["updated"], "2027-01-12")
+        self.assertEqual(result["talk_to_user_in"], json.loads(trip_file.read_text(encoding="utf-8"))["trip"]["language"])
 
         data = json.loads(trip_file.read_text(encoding="utf-8"))
         data["trip"]["status"] = "dreaming"
@@ -276,6 +277,7 @@ class GuideTest(unittest.TestCase):
             sys.stdout = old
         self.assertEqual(code, 0)
         self.assertIn("Phase 0", out.getvalue())
+        self.assertTrue(out.getvalue().startswith("> Write every message to the user"))
 
     def test_unknown_topic(self):
         with self.assertRaises(triply.RefusedError):

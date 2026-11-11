@@ -25,6 +25,8 @@ You talk to it in plain language — "let's plan a trip to Japan", "I booked the
 
 It does not run on claude.ai in the browser or in the mobile apps, which cannot install plugins.
 
+The desktop app is not tested yet. To check that triply works where you use it, ask Claude: "run triply's self-test". It checks that your trips folder can be written, that triply remembers its settings between conversations, and that it can reach the web services it uses, and tells you what to change if something is blocked.
+
 ## Maps and weather
 
 You choose the map service:
@@ -89,12 +91,13 @@ To check opening hours and timetables, Claude reads the official site of the pla
 - `schemas/trip.schema.json` — the trip file (`.triply/trip.json`);
 - `schemas/profile.schema.json` — the user profile, valid for every trip (`.triply/profile.json` in the trips folder);
 - `skills/plan-trip/` — the planning skill: `SKILL.md` and the instructions of each phase in `references/`;
-- `scripts/triply.py` — the single entry point the skill uses: find and create the trips folder, create and rename a trip, check a file, look a place up, get the climate of a period, look points of interest up and check them again, compute travel times, give weekdays and public holidays, give the forecast, prepare the search links, total the costs, keep the map service keys, print the instructions of a phase;
+- `scripts/triply.py` — the single entry point the skill uses: find and create the trips folder, create and rename a trip, check a file, look a place up, get the climate of a period, look points of interest up and check them again, compute travel times, give weekdays and public holidays, give the forecast, prepare the search links, total the costs, keep the map service keys, run the self-test, print the instructions of a phase;
 - `scripts/climate.py` — places, climate and forecast from [Open-Meteo](https://open-meteo.com/) (geocoding, historical weather, forecast);
 - `scripts/places.py` — points of interest by name with OpenStreetMap (Nominatim), Mapbox (Search Box) or Google (Places API, New), and their check by id;
 - `scripts/routes.py` — travel times with OpenStreetMap (OSRM servers of FOSSGIS), Mapbox (Directions) or Google (Routes API);
 - `scripts/calendar_days.py` — weekdays and public holidays (Nager.Date);
 - `scripts/bookings.py` — search links already filled in, and the costs of a trip;
+- `scripts/doctor.py` — the self-test: folder, plugin data, web services;
 - `scripts/documents.py` — the documents for the user: itinerary (HTML and Markdown), calendar (iCalendar), packing list;
 - `scripts/validate.py` — checks a trip file or a profile against its schema and against the coherence rules (references, dates, planning rules):
 

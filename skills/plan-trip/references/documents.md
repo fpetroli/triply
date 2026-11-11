@@ -17,7 +17,8 @@ Run `check`. In its answer, `documents` says what was written.
 
 - **`missing_labels`**: the trip's language has no built-in labels. Translate the English labels given (`english`) into the trip's language — the same keys, the `{placeholders}` unchanged, `weekdays` (7, from Monday) and `months` (12) as short forms — and write them as JSON in the file given (`file`) with your file tools. Run `check` again. Do it once: the file stays with the trip.
 - **`skipped`**: a file of the user has the same name as a document. It is never overwritten: tell the user, and propose to rename their file.
-- **`ticks_read`**: the user ticked or added items in the packing list file; they are now in the trip file.
+- **`from_packing_file`**: what the user ticked, unticked or added in the packing list file (`packed`, `unpacked`, `added`, `added_packed`); it is now in the trip file. Tell the user in one line, so they know it was read.
+- **`packing`**: how many items are packed and how many there are, after reading the file. When you tell the user how many items are left, take the numbers from here, never from your own count.
 
 ## 2. Show them
 

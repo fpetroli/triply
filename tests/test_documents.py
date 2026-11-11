@@ -177,6 +177,8 @@ class BuildTest(unittest.TestCase):
         packing.write_text(packing.read_text(encoding="utf-8").replace("- [ ] ID card", "- [x] ID card"), encoding="utf-8")
         result = self.check()
         self.assertEqual(result["documents"]["ticks_read"], 1)
+        self.assertEqual(result["documents"]["from_packing_file"], [{"item": "ID card", "change": "packed"}])
+        self.assertEqual(result["documents"]["packing"]["packed"], 1)
         data = json.loads((self.trip / ".triply" / "trip.json").read_text(encoding="utf-8"))
         self.assertTrue(data["packing"][0]["packed"])
         self.assertIn("- [x] ID card <!-- triply:id-card:1 -->", packing.read_text(encoding="utf-8"))

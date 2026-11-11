@@ -52,4 +52,4 @@ Tell the user: the weather in two lines, how many items are on the list, that th
 ## 5. Later: the forecast and the ticks
 
 - When the trip is reopened in the **last 15 days before departure**, or `check` says the forecast is available or old, offer to update the weather with the forecast (section 1), and once more two or three days before leaving. When the forecast changes what to pack (rain, cold, heat), update the list and say what changed.
-- When the user says they have packed something, set `packed: true` on those items and say how many are left.
+- When the user says they have packed something, set `packed: true` on those items and run `check`: it also reads the ticks of the packing list file. Say how many are left with the numbers of `documents.packing` in its answer, and mention what it read from the file (`documents.from_packing_file`).
