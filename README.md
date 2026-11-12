@@ -2,9 +2,9 @@
 
 A plugin for Claude that helps you plan and organize your vacations.
 
-> **Status:** early development. triply can set up your trips folder, collect the brief of a new trip, help you choose the destination, check the entry requirements of every traveller on official sources and plan the route with its bases and the days, check them (places open on their day, realistic travel times) list what to book and by when, keeping track of what you booked and spent, prepare the weather and the packing list, and write the documents of the trip: itinerary with maps, calendar, packing list.
+> **Status:** early development, not released yet. Every phase of the planning is there, from the first setup to the documents of the trip. It is tested in Claude Code, not yet in the Claude desktop app.
 
-## What it will do
+## What it does
 
 triply guides you from a first idea to a trip that is ready to go:
 
@@ -12,7 +12,7 @@ triply guides you from a first idea to a trip that is ready to go:
 2. **A trip file as the single source of truth.** Every choice, place, booking and deadline lives in one file, so any new session picks up exactly where you left off.
 3. **Checked stops.** Each place is checked against real map data: it exists, it is open on that day and at that time, and the travel times between stops are realistic.
 4. **Entry requirements.** Passport validity, visas and other requirements are checked on the web, always with source and date.
-5. **Ready-to-use documents**, in your language: an itinerary page with a map, a Markdown itinerary, a calendar of booking deadlines, a packing list based on weather and activities.
+5. **Ready-to-use documents**, in your language: an itinerary page with maps, a Markdown itinerary, a calendar with the deadlines, the stays and the moves, a packing list based on weather and activities.
 
 triply never books or pays for anything: it gives you prefilled search links and keeps track of what you have booked.
 
@@ -39,7 +39,7 @@ Weather comes from [Open-Meteo](https://open-meteo.com/) (free for non-commercia
 
 triply never requires a paid service.
 
-With Mapbox or Google, triply asks for the key the first time it looks places up, and keeps it in the plugin's own data folder on your computer, readable only by you and outside your trips folder, so it never ends up in a trip you share. Use the Mapbox *public* token (`pk.…`); for Google, a key restricted to the Places API (New) and the Routes API. If you prefer not to paste the key in the chat, triply tells you which file to write it in.
+With Mapbox or Google, triply asks for the key the first time it looks places up, and keeps it in the plugin's own data folder on your computer, readable only by you and outside your trips folder, so it never ends up in a trip you share. Use the Mapbox *public* token (`pk.…`); for Google, a key restricted to the Places API (New) and the Routes API. If you prefer not to paste the key in the chat, triply tells you which file to write it in. Uninstalling the plugin removes that folder, and the keys with it.
 
 To check the days, triply asks the map service for the travel times and looks the places up again. With OpenStreetMap, routes come from the public routing servers of [FOSSGIS](https://routing.openstreetmap.de/) (on foot, by bike, by car; car times have no traffic); public transport is computed only by Google. With Google, checking opening hours uses the "Enterprise" tier of Place Details, which has a smaller free monthly quota (1,000 places at the time of writing): enough for a trip, but keep an eye on it in the Google Cloud console. Public holidays come from [Nager.Date](https://nagerholidays.com/).
 
@@ -78,7 +78,7 @@ In the Claude desktop app: **Customize → Plugins**, add the marketplace `fpetr
 
 ## Permissions
 
-triply works through one script of its own, `scripts/triply.py`, which finds and creates your trips folder, checks the trip files and asks Open-Meteo for the climate of a place. The first time, Claude asks your permission to run it: choose **"Yes, and don't ask again"**. After an update of the plugin it may ask once more.
+triply works through one script of its own, `scripts/triply.py`, which finds and creates your trips folder, checks the trip files, writes the documents and asks the web services above (Open-Meteo, the map service, Nager.Date). The first time, Claude asks your permission to run it: choose **"Yes, and don't ask again"**. After an update of the plugin it may ask once more.
 
 triply asks to keep your trips folder inside the folder where you open Claude, and next time to open Claude directly there: that way changes to the trip files do not ask for permission one by one.
 

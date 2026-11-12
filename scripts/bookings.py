@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import datetime
 import urllib.parse
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 ADULTS = ("adult", "senior")
 CHILDREN = ("child", "teen")
