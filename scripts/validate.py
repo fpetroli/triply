@@ -513,6 +513,9 @@ def _print(report: Report, as_json: bool, out: Any) -> None:
 
 
 def main(argv: Optional[Iterable[str]] = None) -> int:
+    for stream in (sys.stdout, sys.stderr):  # UTF-8 also on Windows
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser(description="Check a triply trip file or user profile.")
     parser.add_argument("target", type=Path, help="trip folder, trip.json or profile.json")
     parser.add_argument("--kind", choices=["trip", "profile"], help="kind of file (default: from the file name)")

@@ -370,6 +370,13 @@ def cmd_new_trip(
     return {"trip_folder": str(folder), "trip_file": str(folder / TRIPLY / TRIP_FILE)}
 
 
+def _same_folder(a: Path, b: Path) -> bool:
+    try:
+        return a.samefile(b)
+    except OSError:
+        return False
+
+
 def cmd_rename_trip(trip_folder: Path, title: str) -> Dict[str, Any]:
     trip_folder = trip_folder.expanduser().resolve()
     if not is_trip_folder(trip_folder):
@@ -378,7 +385,9 @@ def cmd_rename_trip(trip_folder: Path, title: str) -> Dict[str, Any]:
     trip_file = trip_folder / TRIPLY / TRIP_FILE
     data = read_json(trip_file)
     if target != trip_folder:
-        if target.exists():
+        # On Windows and macOS names differ only in case point to the same
+        # folder: "giappone" -> "Giappone" is a rename, not a clash.
+        if target.exists() and not _same_folder(target, trip_folder):
             raise RefusedError(f"the folder {target} already exists: choose another title")
         trip_folder.rename(target)
     data["trip"]["title"] = title.strip()
@@ -680,7 +689,20 @@ class RefusedError(Exception):
 # ---------------------------------------------------------------- command line
 
 
+def utf8_output() -> None:
+    """Write the output as UTF-8 everywhere.
+
+    On Windows the output of a script often uses a local code page (cp1252 and
+    the like), which cannot hold names such as 東京: the script would stop in
+    the middle of its answer.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8")
+
+
 def main(argv: Optional[List[str]] = None) -> int:
+    utf8_output()
     parser = argparse.ArgumentParser(description="triply: trips folder, trip files, places, routes, calendar, climate, bookings and map service keys.")
     commands = parser.add_subparsers(dest="command", required=True)
 

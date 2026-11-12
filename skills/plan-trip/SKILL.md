@@ -27,6 +27,8 @@ All file work goes through one script. Run it exactly like this, with these path
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/triply.py" <command> …
 ```
 
+**Python.** The script needs Python 3.9 or later. `python3` is the name on macOS and Linux; on Windows it is often missing, or it only opens the Microsoft Store ("Python was not found…"). If the first call fails that way, run the same call with `python` instead of `python3`, then with `py -3`, and keep the first one that works for the rest of the conversation, in every call of the table below. If none works, or the version printed in an error is older than 3.9, tell the user in plain words that triply needs Python: on Windows from python.org, with "Add python.exe to PATH" ticked during the installation, then a new conversation.
+
 | Command | What it does |
 |---|---|
 | `locate --data "${CLAUDE_PLUGIN_DATA}"` | Finds the trips folder (from the current folder upwards, then the one remembered), whether the user profile exists, the trip the current folder belongs to, and the list of trips with phase and next step |

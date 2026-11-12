@@ -38,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The check leaves the backup of a day out of the sequence of its stops (times and moves between stops), and warns when the same place is two stops of one day.
 - Every guide starts with the rule on the user's language, and `check` gives the language to talk in (`talk_to_user_in`).
 - `check` says what it read from the packing list file (`from_packing_file`) and how many items are packed (`packing`).
+- Windows: the skill finds Python as `python3`, `python` or `py`, the script writes its output as UTF-8 on every system, and renaming a trip only in upper or lower case works on Windows and macOS.
 - Trip file: `rain_probability_pct` in the weather, `traveller` and `source` on packing items. The check warns when the forecast is available but not used yet, or more than two days old.
 - Trip file: `booking.links`, `booking` on the stops of the days, `iata` on places, `source` on deadlines and the deadline kind `cancellation`. The check warns about overdue deadlines, deadlines of things already booked, things still to book with no deadline after this phase, and a budget exceeded.
 - Trip file: `verification` of each stop of a day, `confirmed_by` and `notes` on opening hours, `sources` on the verification of a place, `duration_confirmed_by` on transports, `estimated` and `notes` on the moves between stops. The check warns when there is not enough time between two stops, about stops and places to review, and, after the verification, about what is still unchecked.

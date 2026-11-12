@@ -9,7 +9,9 @@ from __future__ import annotations
 import datetime
 import io
 import json
+import os
 import re
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -184,6 +186,38 @@ class TripsFolderTest(unittest.TestCase):
         code, result = run("rename-trip", first["trip_folder"], "--title", "Sardegna 2027")
         self.assertEqual(code, 1)
         self.assertIn("already exists", result["refused"])
+
+
+    def test_rename_trip_only_the_case(self):
+        run("init", str(self.folder))
+        self.write_profile()
+        _, created = run("new-trip", str(self.folder), "--title", "sardegna 2027")
+        code, result = run("rename-trip", created["trip_folder"], "--title", "Sardegna 2027")
+        self.assertEqual(code, 0, result)
+        self.assertEqual([p.name for p in self.folder.iterdir() if not p.name.startswith(".")], ["Sardegna 2027"])
+
+    def test_same_folder(self):
+        # On Windows and macOS "sardegna" and "Sardegna" are one folder: a
+        # rename that only changes the case must not look like a clash.
+        self.folder.mkdir()
+        other = self.base / "Altro"
+        other.mkdir()
+        self.assertTrue(triply._same_folder(self.base / "." / "Viaggi", self.folder))
+        self.assertFalse(triply._same_folder(other, self.folder))
+        self.assertFalse(triply._same_folder(self.base / "missing", self.folder))
+
+
+class OutputTest(unittest.TestCase):
+    def test_output_is_utf8_with_a_windows_code_page(self):
+        # Windows often gives a script a local code page such as cp1252,
+        # which cannot write 東京: the answer must still come out whole.
+        script = Path(__file__).resolve().parent.parent / "scripts" / "triply.py"
+        env = {**os.environ, "PYTHONIOENCODING": "cp1252"}
+        missing = str(Path(tempfile.gettempdir()) / "東京-triply-missing")
+        done = subprocess.run([sys.executable, str(script), "check", missing], env=env, capture_output=True)
+        self.assertNotIn(b"Traceback", done.stderr)
+        result = json.loads(done.stdout.decode("utf-8"))
+        self.assertIn("東京", result["refused"])
 
 
 class PlaceAndClimateTest(unittest.TestCase):

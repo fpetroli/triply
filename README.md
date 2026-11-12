@@ -23,9 +23,9 @@ You talk to it in plain language — "let's plan a trip to Japan", "I booked the
 - Claude Code
 - the Claude desktop app (Cowork)
 
-It does not run on claude.ai in the browser or in the mobile apps, which cannot install plugins.
+It is made for macOS, Linux and Windows. It does not run on claude.ai in the browser or in the mobile apps, which cannot install plugins.
 
-The desktop app is not tested yet. To check that triply works where you use it, ask Claude: "run triply's self-test". It checks that your trips folder can be written, that triply remembers its settings between conversations, and that it can reach the web services it uses, and tells you what to change if something is blocked.
+The desktop app and Windows are not tested yet. To check that triply works where you use it, ask Claude: "run triply's self-test". It checks that your trips folder can be written, that triply remembers its settings between conversations, and that it can reach the web services it uses, and tells you what to change if something is blocked.
 
 ## Maps and weather
 
@@ -64,6 +64,7 @@ triply works in a folder you choose, for example `Trips` on your desktop, with o
 ## Requirements
 
 - Python 3.9 or later, standard library only: nothing else to install.
+- On macOS and Linux Python is usually there already. On Windows, install it from [python.org](https://www.python.org/downloads/) and tick "Add python.exe to PATH" during the installation; triply finds it whether it is called `python3`, `python` or `py`.
 
 ## Installation
 
@@ -105,7 +106,7 @@ To check opening hours and timetables, Claude reads the official site of the pla
   python3 scripts/validate.py <trip folder | trips folder | file.json> [--json]
   ```
 
-Run the tests from the repository root:
+Run the tests from the repository root (on Windows, `python` or `py` instead of `python3`):
 
 ```
 python3 -m unittest discover -s tests
